@@ -2,7 +2,7 @@ const socket = io()
 
 
 var width = window.innerWidth;
-var height = window.innerHeight*0.7;
+var height = window.innerHeight * 0.7;
 
 var stage = new Konva.Stage({
     container: 'container',
@@ -40,11 +40,11 @@ const circles = {}
 function hashCode(str) { // java String#hashCode
     var hash = 0;
     for (var i = 0; i < str.length; i++) {
-       hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return hash;
 }
-function intToRGB(i){
+function intToRGB(i) {
     var c = (i & 0x00FFFFFF)
         .toString(16)
         .toUpperCase();
@@ -54,9 +54,9 @@ function intToRGB(i){
 
 function createCircle(s, socket_id) {
     const obj = {
-        fill: '#'+ intToRGB(hashCode(socket_id)),
+        fill: '#' + intToRGB(hashCode(socket_id)),
         radius: 20,
-      }
+    }
 
     if (s.x) obj.x = s.x
     if (s.y) obj.y = s.y
@@ -69,7 +69,7 @@ socket.on('users', s => {
     console.log('Got whole new users:', s)
 
     for (socket_id in s) {
-        // create the circle
+        // create the circle, our OWN circle will be in here...
         const circle = createCircle(s[socket_id], socket_id)
         group.add(circle)
         circles[socket_id] = circle
@@ -110,6 +110,7 @@ socket.on('userupdate', e => {
     console.log('Got a userupdate:', e)
 
     if (!e.socket_id || !e.x || !e.y) return //throw away bad messages
+    if (e.socket_id === socket.id) return // ignore our own...
 
     // update the user's circle.
     const socket_id = e.socket_id
@@ -127,22 +128,33 @@ socket.on('userupdate', e => {
 
 // this function will return pointer position relative to the passed node
 function getRelativePointerPosition(node) {
-  var transform = node.getAbsoluteTransform().copy();
-  // to detect relative position we need to invert transform
-  transform.invert();
+    var transform = node.getAbsoluteTransform().copy();
+    // to detect relative position we need to invert transform
+    transform.invert();
 
-  // get pointer (say mouse or touch) position
-  var pos = node.getStage().getPointerPosition();
+    // get pointer (say mouse or touch) position
+    var pos = node.getStage().getPointerPosition();
 
-  // now we can find relative point
-  return transform.point(pos);
+    // now we can find relative point
+    return transform.point(pos);
 }
 
 // when a mouse move happens, lets push the event to the server.
 stage.on('mousemove', e => {
-  var pos = getRelativePointerPosition(group);
+    var pos = getRelativePointerPosition(group);
 
-  socket.emit('userupdate', pos)
+    // move our own locally...
+    const socket_id = socket.id
+    const circle = circles[socket_id]
+
+    if (!circle) return
+
+    circle.x(pos.x)
+    circle.y(pos.y)
+
+    layer.batchDraw()
+
+    socket.emit('userupdate', pos)
 });
 
 
@@ -171,5 +183,5 @@ socket.on('stateupdate', e => {
 textarea.addEventListener('input', e => {
     const text = e.target.value
 
-    socket.emit('stateupdate', {text})
+    socket.emit('stateupdate', { text })
 })

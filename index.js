@@ -23,7 +23,7 @@ io.on('connection', socket => {
 
     // tell everyone someone connected
     io.emit('connected', socket.id)
-    
+
     // add the connection to the state...
     users[socket.id] = {}
 
