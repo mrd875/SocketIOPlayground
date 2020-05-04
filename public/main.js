@@ -111,6 +111,8 @@ socket.on('disconnected', socket_id => {
 socket.on('stateupdate', e => {
     console.log('Got a stateupdate:', e)
 
+    if (!e.socket_id || !e.x || !e.y) return //throw away bad messages
+
     const socket_id = e.socket_id
     const circle = circles[socket_id]
 
