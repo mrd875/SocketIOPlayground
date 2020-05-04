@@ -1,7 +1,8 @@
-socket = io()
+const socket = io()
+
 
 var width = window.innerWidth;
-var height = window.innerHeight;
+var height = window.innerHeight*0.7;
 
 var stage = new Konva.Stage({
     container: 'container',
@@ -42,8 +43,7 @@ function hashCode(str) { // java String#hashCode
        hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return hash;
-} 
-
+}
 function intToRGB(i){
     var c = (i & 0x00FFFFFF)
         .toString(16)
@@ -69,9 +69,8 @@ socket.on('users', s => {
     console.log('Got whole new users:', s)
 
     for (socket_id in s) {
+        // create the circle
         const circle = createCircle(s[socket_id], socket_id)
-
-        // add the circle to the konva group
         group.add(circle)
         circles[socket_id] = circle
     }
@@ -86,8 +85,6 @@ socket.on('connected', socket_id => {
 
     // create the circle
     const circle = createCircle({}, socket_id)
-
-    // add the circle to the konva group
     group.add(circle)
     circles[socket_id] = circle
 
@@ -114,6 +111,7 @@ socket.on('userupdate', e => {
 
     if (!e.socket_id || !e.x || !e.y) return //throw away bad messages
 
+    // update the user's circle.
     const socket_id = e.socket_id
     const circle = circles[socket_id]
 
@@ -140,8 +138,38 @@ function getRelativePointerPosition(node) {
   return transform.point(pos);
 }
 
+// when a mouse move happens, lets push the event to the server.
 stage.on('mousemove', e => {
   var pos = getRelativePointerPosition(group);
 
   socket.emit('userupdate', pos)
 });
+
+
+
+const textarea = document.getElementById('livetext')
+
+// init the state when we recieve it
+socket.on('state', s => {
+    console.log('Got whole new state:', s)
+
+    if (s.text !== undefined) {
+        textarea.value = s.text
+    }
+})
+
+// when we recieve a stateupdate
+socket.on('stateupdate', e => {
+    console.log('Got a stateupdate:', e)
+
+    if (e.socket_id === socket.id) return // ignore our own change
+    if (e.text === undefined) return //throw away bad messages
+
+    textarea.value = e.text
+})
+
+textarea.addEventListener('input', e => {
+    const text = e.target.value
+
+    socket.emit('stateupdate', {text})
+})
