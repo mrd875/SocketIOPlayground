@@ -16,6 +16,9 @@ const PORT = process.env.PORT || 3000;
 io.on('connection', socket => {
     console.log(`${socket.id} has connected.`)
 
+    // tell everyone someone connected
+    socket.broadcast.emit('connected', socket.id)
+
     // emit to everyone else about the mouse movement
     socket.on('mousemove', e => {
         // append the socket.id to the event...
@@ -27,6 +30,9 @@ io.on('connection', socket => {
 
     socket.once('disconnect', reason => {
         console.log(`${socket.id} has disconnected (${reason}).`)
+
+        // tell everyone someone disconnected
+        socket.broadcast.emit('disconnected', socket.id)
     })
 })
 

@@ -26,6 +26,17 @@ var group = new Konva.Group({
 layer.add(group);
 layer.draw();
 
+
+socket.on('connected', e => {
+    console.log(`${e} has connected.`)
+})
+
+socket.on('disconnected', e => {
+    console.log(`${e} has disconnected.`)
+})
+
+
+
 // this function will return pointer position relative to the passed node
 function getRelativePointerPosition(node) {
   var transform = node.getAbsoluteTransform().copy();
