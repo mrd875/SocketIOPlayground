@@ -65,7 +65,7 @@ function createCircle(s, socket_id) {
 }
 
 // listen for whole new state
-socket.once('state', s => {
+socket.on('state', s => {
     console.log('Got whole new state:', s)
 
     for (socket_id in s) {
