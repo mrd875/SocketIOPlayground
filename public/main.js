@@ -160,6 +160,7 @@ stage.on('mousemove', e => {
 
 
 const textarea = document.getElementById('livetext')
+const textarea2 = document.getElementById('livetext2')
 
 // init the state when we recieve it
 socket.on('state', s => {
@@ -168,6 +169,10 @@ socket.on('state', s => {
     if (s.text !== undefined) {
         textarea.value = s.text
     }
+
+    if (s.text2 !== undefined) {
+        textarea2.value = s.text2
+    }
 })
 
 // when we recieve a stateupdate
@@ -175,13 +180,22 @@ socket.on('stateupdate', e => {
     console.log('Got a stateupdate:', e)
 
     if (e.socket_id === socket.id) return // ignore our own change
-    if (e.text === undefined) return //throw away bad messages
 
-    textarea.value = e.text
+    if (e.text !== undefined)
+        textarea.value = e.text
+
+    if (e.text2 !== undefined)
+        textarea2.value = e.text2
 })
 
 textarea.addEventListener('input', e => {
     const text = e.target.value
 
     socket.emit('stateupdate', { text })
+})
+
+textarea2.addEventListener('input', e => {
+    const text2 = e.target.value
+
+    socket.emit('stateupdate', { text2 })
 })
