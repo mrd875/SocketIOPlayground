@@ -21,6 +21,11 @@ const users = {}
 io.on('connection', socket => {
     console.log(`${socket.id} has connected.`)
 
+    /*console.log(io.sockets.adapter.rooms)
+    setTimeout(() => {
+        console.log(socket.rooms)
+    }, 100)*/
+
     // tell everyone someone connected
     io.emit('connected', socket.id)
 
