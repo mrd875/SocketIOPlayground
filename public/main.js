@@ -1,1 +1,3 @@
-console.log('client')
+socket = io()
+
+console.log(socket)

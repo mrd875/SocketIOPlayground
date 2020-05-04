@@ -15,10 +15,11 @@ const PORT = process.env.PORT || 3000;
 
 io.on('connection', socket => {
     console.log(`${socket.id} has connected.`)
+
+    socket.once('disconnect', reason => {
+        console.log(`${socket.id} has disconnected (${reason}).`)
+    })
 })
 
-io.on('disconnect', socket => {
-    console.log(`${socket.id} has disconnected.`)
-})
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
