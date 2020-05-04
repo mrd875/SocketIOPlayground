@@ -105,6 +105,20 @@ socket.on('disconnected', socket_id => {
     delete circles[socket_id]
 })
 
+// listen for when we disconnect
+socket.on('disconnect', (reason) => {
+    console.log(`We have disconnected (${reason}).`)
+
+    // clean up
+    for (socket_id in circles) {
+        const circle = circles[socket_id]
+        circle.destroy()
+        delete circles[socket_id]
+    }
+    
+    layer.batchDraw()
+})
+
 // listen for userupdates
 socket.on('userupdate', e => {
     console.log('Got a userupdate:', e)
