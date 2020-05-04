@@ -1,30 +1,53 @@
 socket = io()
 
-// first we need to create a stage
+var width = window.innerWidth;
+var height = window.innerHeight;
+
 var stage = new Konva.Stage({
-    container: 'container',   // id of container <div>
-    width: 500,
-    height: 500
-  });
-  
-  // then create layer
-  var layer = new Konva.Layer();
-  
-  // create our shape
-  var circle = new Konva.Circle({
-    x: stage.width() / 2,
-    y: stage.height() / 2,
-    radius: 70,
+  container: 'container',
+  width: width,
+  height: height,
+  x: 0,
+  y: 0,
+});
+
+var layer = new Konva.Layer({
+  scaleX: 1,
+  scaleY: 1,
+  rotation: 0,
+});
+stage.add(layer);
+
+var group = new Konva.Group({
+  x: 0,
+  rotation: 0,
+  scaleX: 1,
+});
+layer.add(group);
+layer.draw();
+
+// this function will return pointer position relative to the passed node
+function getRelativePointerPosition(node) {
+  var transform = node.getAbsoluteTransform().copy();
+  // to detect relative position we need to invert transform
+  transform.invert();
+
+  // get pointer (say mouse or touch) position
+  var pos = node.getStage().getPointerPosition();
+
+  // now we can find relative point
+  return transform.point(pos);
+}
+
+stage.on('mousemove', function () {
+  var pos = getRelativePointerPosition(group);
+  var shape = new Konva.Circle({
+    x: pos.x,
+    y: pos.y,
     fill: 'red',
-    stroke: 'black',
-    strokeWidth: 4
+    radius: 20,
   });
-  
-  // add the shape to the layer
-  layer.add(circle);
-  
-  // add the layer to the stage
-  stage.add(layer);
-  
-  // draw the image
-  layer.draw();
+
+  group.add(shape);
+  layer.batchDraw();
+});
