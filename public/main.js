@@ -1,64 +1,46 @@
 socket = io()
+let state = {}
 
-var width = window.innerWidth;
-var height = window.innerHeight;
-
-var stage = new Konva.Stage({
-  container: 'container',
-  width: width,
-  height: height,
-  x: 0,
-  y: 0,
-});
-
-var layer = new Konva.Layer({
-  scaleX: 1,
-  scaleY: 1,
-  rotation: 0,
-});
-stage.add(layer);
-
-var group = new Konva.Group({
-  x: 0,
-  rotation: 0,
-  scaleX: 1,
-});
-layer.add(group);
-layer.draw();
-
-
-socket.on('connected', e => {
-    console.log(`${e} has connected.`)
-})
-
-socket.on('disconnected', e => {
-    console.log(`${e} has disconnected.`)
-})
-
-
-
-// this function will return pointer position relative to the passed node
-function getRelativePointerPosition(node) {
-  var transform = node.getAbsoluteTransform().copy();
-  // to detect relative position we need to invert transform
-  transform.invert();
-
-  // get pointer (say mouse or touch) position
-  var pos = node.getStage().getPointerPosition();
-
-  // now we can find relative point
-  return transform.point(pos);
+function stateChanged() {
 }
 
-stage.on('mousemove', function () {
-  var pos = getRelativePointerPosition(group);
-  var shape = new Konva.Circle({
-    x: pos.x,
-    y: pos.y,
-    fill: 'red',
-    radius: 20,
-  });
+// listen for whole new state
+socket.once('state', s => {
+    console.log('Got whole new state:', s)
 
-  group.add(shape);
-  layer.batchDraw();
-});
+    state = s
+    stateChanged()
+})
+
+// listen for connections
+socket.on('connected', socket_id => {
+    console.log(`${socket_id} has connected.`)
+
+    // update our state.
+    state[socket_id] = {}
+    stateChanged()
+})
+
+// listen for disconnections
+socket.on('disconnected', socket_id => {
+    console.log(`${socket_id} has disconnected.`)
+
+    // update our state.
+    delete state[socket_id]
+    stateChanged()
+})
+
+// listen for stateupdates
+socket.on('stateupdate', e => {
+    console.log('Got a stateupdate:', e)
+
+    // update the state
+    const socket_id = e.socket_id
+    delete e[socket_id]
+
+    Object.assign(state[socket_id], e)
+    stateChanged()
+})
+
+
+socket.emit('stateupdate', {})
