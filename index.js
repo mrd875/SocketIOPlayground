@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 // this is the state of the server
 const state = {}
+const users = {}
 
 // listen for a connection.
 io.on('connection', socket => {
@@ -24,10 +25,28 @@ io.on('connection', socket => {
     io.emit('connected', socket.id)
     
     // add the connection to the state...
-    state[socket.id] = {}
+    users[socket.id] = {}
 
     // notify new user of the current state...
     socket.emit('state', state);
+    socket.emit('users', users);
+
+    let userupdate
+    socket.on('userupdate', userupdate = e => {
+        // ignore non object messages
+        if (typeof e !== 'object') return
+
+        console.log('Got a userupdate from', socket.id, 'being:', e)
+
+        // update our state
+        Object.assign(users[socket.id], e)
+
+        // append the socket.id to the event...
+        e.socket_id = socket.id
+
+        // send it out.
+        io.emit('userupdate', e)
+    })
 
     let stateupdate
     socket.on('stateupdate', stateupdate = e => {
@@ -37,7 +56,7 @@ io.on('connection', socket => {
         console.log('Got a stateupdate from', socket.id, 'being:', e)
 
         // update our state
-        Object.assign(state[socket.id], e)
+        Object.assign(state, e)
 
         // append the socket.id to the event...
         e.socket_id = socket.id
@@ -49,13 +68,16 @@ io.on('connection', socket => {
 
     socket.once('disconnect', reason => {
         console.log(`${socket.id} has disconnected (${reason}).`)
+
+        // clean up
         socket.off('stateupdate', stateupdate)
+        socket.off('userupdate', userupdate)
 
         // tell everyone someone disconnected
         io.emit('disconnected', socket.id)
 
         // remove the connection from the state
-        delete state[socket.id]
+        delete users[socket.id]
     })
 })
 

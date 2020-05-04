@@ -64,9 +64,9 @@ function createCircle(s, socket_id) {
     return new Konva.Circle(obj);
 }
 
-// listen for whole new state
-socket.on('state', s => {
-    console.log('Got whole new state:', s)
+// listen for users update
+socket.on('users', s => {
+    console.log('Got whole new users:', s)
 
     for (socket_id in s) {
         const circle = createCircle(s[socket_id], socket_id)
@@ -101,20 +101,23 @@ socket.on('disconnected', socket_id => {
 
     // delete the circle
     const circle = circles[socket_id]
+    if (!circle) return
 
     circle.destroy()
     layer.batchDraw()
     delete circles[socket_id]
 })
 
-// listen for stateupdates
-socket.on('stateupdate', e => {
-    console.log('Got a stateupdate:', e)
+// listen for userupdates
+socket.on('userupdate', e => {
+    console.log('Got a userupdate:', e)
 
     if (!e.socket_id || !e.x || !e.y) return //throw away bad messages
 
     const socket_id = e.socket_id
     const circle = circles[socket_id]
+
+    if (!circle) return
 
     circle.x(e.x)
     circle.y(e.y)
@@ -140,5 +143,5 @@ function getRelativePointerPosition(node) {
 stage.on('mousemove', e => {
   var pos = getRelativePointerPosition(group);
 
-  socket.emit('stateupdate', pos)
+  socket.emit('userupdate', pos)
 });
