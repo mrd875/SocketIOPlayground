@@ -14,8 +14,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT || 3000;
 
 // this is the state of the server
-const state = {}
-const users = {}
+let state = {}
+let users = {}
+
+// https://stackoverflow.com/questions/30812765/how-to-remove-undefined-and-null-values-from-an-object-using-lodash/31209300
+const removeObjectsWithNull = (obj) => {
+    return _(obj)
+      .pickBy(_.isObject) // get only objects
+      .mapValues(removeObjectsWithNull) // call only for values as objects
+      .assign(_.omitBy(obj, _.isObject)) // save back result that is not object
+      .omitBy(_.isNil) // remove null and undefined from object
+      .value(); // get value
+};
 
 // listen for a connection.
 io.on('connection', socket => {
@@ -44,9 +54,12 @@ io.on('connection', socket => {
 
         // update our state
         _.merge(users[socket.id], e)
+        // remove null keys...
+        users[socket.id] = removeObjectsWithNull(users[socket.id])
 
         // send it out.
         io.emit('user_updated', socket.id, e)
+        // its up to the client to remove the null values to keep their state consistent.
     })
 
     let stateupdate
@@ -58,9 +71,14 @@ io.on('connection', socket => {
 
         // update our state
         _.merge(state, e)
+        // remove null keys...
+        state = removeObjectsWithNull(state)
+
+        console.log(state)
 
         // send it out.
         io.emit('state_updated', socket.id, e)
+        // its up to the client to remove the null values to keep their state consistent.
     })
 
 
