@@ -1,5 +1,31 @@
-const socket = io()
+function createSocket(
+    onInitState = (state, users) => {},
+    onSelfDisconnect = reason => {},
+    onUserConnected = socket_id => {},
+    onUserDisconnected = (socket_id, reason) => {},
+    onUserUpdated = (socket_id, payload_delta) => {},
+    onStateUpdated = (socket_id, payload_delta) => {}) {
+    const socket = io()
 
+    socket.on('init_state', onInitState)
+    socket.on('disconnect', onSelfDisconnect)
+    
+    socket.on('connected', onUserConnected)
+    socket.on('disconnected', onUserDisconnected)
+    socket.on('user_updated', onUserUpdated)
+
+    socket.on('state_updated', onStateUpdated)
+
+    socket.updateState = payload_delta => {
+        socket.emit('state_updated', payload_delta)
+    }
+
+    socket.updateUser = payload_delta => {
+        socket.emit('user_updated', payload_delta)
+    }
+
+    return socket
+}
 
 var width = window.innerWidth;
 var height = window.innerHeight * 0.7;
@@ -64,22 +90,42 @@ function createCircle(s, socket_id) {
     return new Konva.Circle(obj);
 }
 
-// listen for users update
-socket.on('users', s => {
-    console.log('Got whole new users:', s)
+const textarea = document.getElementById('livetext')
+const textarea2 = document.getElementById('livetext2')
 
-    for (socket_id in s) {
-        // create the circle, our OWN circle will be in here...
-        const circle = createCircle(s[socket_id], socket_id)
+const onInitState = (state, users) => {
+    console.log('Got whole new state:', state, users)
+
+    // draw a circle for each user... our OWN circle will be in here...
+    for (const socket_id in users) {
+        const circle = createCircle(users[socket_id], socket_id)
         group.add(circle)
         circles[socket_id] = circle
     }
 
-    layer.batchDraw()
-})
+    // init the textareas from the state.
+    if (state.text !== undefined)
+        textarea.value = state.text
+    if (state.text2 !== undefined)
+        textarea2.value = state.text2
 
-// listen for connections
-socket.on('connected', socket_id => {
+    layer.batchDraw()
+}
+
+const onSelfDisconnect = reason => {
+    console.log(`We have disconnected (${reason}).`)
+
+    // clean up the circles...
+    for (const socket_id in circles) {
+        const circle = circles[socket_id]
+        circle.destroy()
+        delete circles[socket_id]
+    }
+    
+    layer.batchDraw()
+}
+
+const onUserConnected = socket_id => {
     if (socket_id === socket.id) return // ignore our own connected message
     console.log(`${socket_id} has connected.`)
 
@@ -89,11 +135,9 @@ socket.on('connected', socket_id => {
     circles[socket_id] = circle
 
     layer.batchDraw()
-})
+}
 
-
-// listen for disconnections
-socket.on('disconnected', socket_id => {
+const onUserDisconnected = socket_id => {
     console.log(`${socket_id} has disconnected.`)
 
     // delete the circle
@@ -103,40 +147,37 @@ socket.on('disconnected', socket_id => {
     circle.destroy()
     layer.batchDraw()
     delete circles[socket_id]
-})
+}
 
-// listen for when we disconnect
-socket.on('disconnect', (reason) => {
-    console.log(`We have disconnected (${reason}).`)
+const onUserUpdated = (socket_id, payload_delta) => {
+    console.log('Got a userupdate:', socket_id, payload_delta)
 
-    // clean up
-    for (socket_id in circles) {
-        const circle = circles[socket_id]
-        circle.destroy()
-        delete circles[socket_id]
-    }
-    
-    layer.batchDraw()
-})
-
-// listen for userupdates
-socket.on('userupdate', e => {
-    console.log('Got a userupdate:', e)
-
-    if (!e.socket_id || !e.x || !e.y) return //throw away bad messages
-    if (e.socket_id === socket.id) return // ignore our own...
+    if (!socket_id || !payload_delta.x || !payload_delta.y) return //throw away bad messages
+    if (socket_id === socket.id) return // ignore our own...
 
     // update the user's circle.
-    const socket_id = e.socket_id
     const circle = circles[socket_id]
-
     if (!circle) return
 
-    circle.x(e.x)
-    circle.y(e.y)
+    circle.x(payload_delta.x)
+    circle.y(payload_delta.y)
 
     layer.batchDraw()
-})
+}
+
+const onStateUpdated = (socket_id, payload_delta) => {
+    console.log('Got a stateupdate:', socket_id, payload_delta)
+
+    if (socket_id === socket.id) return // ignore our own change
+
+    if (payload_delta.text !== undefined)
+        textarea.value = payload_delta.text
+
+    if (payload_delta.text2 !== undefined)
+        textarea2.value = payload_delta.text2
+}
+
+const socket = createSocket(onInitState, onSelfDisconnect, onUserConnected, onUserDisconnected, onUserUpdated, onStateUpdated)
 
 
 
@@ -153,6 +194,7 @@ function getRelativePointerPosition(node) {
     return transform.point(pos);
 }
 
+
 // when a mouse move happens, lets push the event to the server.
 stage.on('mousemove', e => {
     var pos = getRelativePointerPosition(group);
@@ -160,7 +202,6 @@ stage.on('mousemove', e => {
     // move our own locally...
     const socket_id = socket.id
     const circle = circles[socket_id]
-
     if (!circle) return
 
     circle.x(pos.x)
@@ -168,48 +209,21 @@ stage.on('mousemove', e => {
 
     layer.batchDraw()
 
-    socket.emit('userupdate', pos)
+    // send the update
+    socket.updateUser(pos)
 });
 
 
-
-const textarea = document.getElementById('livetext')
-const textarea2 = document.getElementById('livetext2')
-
-// init the state when we recieve it
-socket.on('state', s => {
-    console.log('Got whole new state:', s)
-
-    if (s.text !== undefined) {
-        textarea.value = s.text
-    }
-
-    if (s.text2 !== undefined) {
-        textarea2.value = s.text2
-    }
-})
-
-// when we recieve a stateupdate
-socket.on('stateupdate', e => {
-    console.log('Got a stateupdate:', e)
-
-    if (e.socket_id === socket.id) return // ignore our own change
-
-    if (e.text !== undefined)
-        textarea.value = e.text
-
-    if (e.text2 !== undefined)
-        textarea2.value = e.text2
-})
-
+// listen for the textareas changing...
 textarea.addEventListener('input', e => {
     const text = e.target.value
 
-    socket.emit('stateupdate', { text })
+    // and send the update to the server.
+    socket.updateState({ text })
 })
 
 textarea2.addEventListener('input', e => {
     const text2 = e.target.value
 
-    socket.emit('stateupdate', { text2 })
+    socket.updateState({ text2 })
 })

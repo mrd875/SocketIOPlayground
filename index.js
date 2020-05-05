@@ -33,11 +33,10 @@ io.on('connection', socket => {
     users[socket.id] = {}
 
     // notify new user of the current state...
-    socket.emit('state', state);
-    socket.emit('users', users);
+    socket.emit('init_state', state, users);
 
     let userupdate
-    socket.on('userupdate', userupdate = e => {
+    socket.on('user_updated', userupdate = e => {
         // ignore non object messages
         if (typeof e !== 'object') return
 
@@ -46,15 +45,12 @@ io.on('connection', socket => {
         // update our state
         Object.assign(users[socket.id], e)
 
-        // append the socket.id to the event...
-        e.socket_id = socket.id
-
         // send it out.
-        io.emit('userupdate', e)
+        io.emit('user_updated', socket.id, e)
     })
 
     let stateupdate
-    socket.on('stateupdate', stateupdate = e => {
+    socket.on('state_updated', stateupdate = e => {
         // ignore non object messages
         if (typeof e !== 'object') return
 
@@ -63,11 +59,8 @@ io.on('connection', socket => {
         // update our state
         Object.assign(state, e)
 
-        // append the socket.id to the event...
-        e.socket_id = socket.id
-
         // send it out.
-        io.emit('stateupdate', e)
+        io.emit('state_updated', socket.id, e)
     })
 
 
@@ -75,11 +68,11 @@ io.on('connection', socket => {
         console.log(`${socket.id} has disconnected (${reason}).`)
 
         // clean up
-        socket.off('stateupdate', stateupdate)
-        socket.off('userupdate', userupdate)
+        socket.off('state_updated', stateupdate)
+        socket.off('user_updated', userupdate)
 
         // tell everyone someone disconnected
-        io.emit('disconnected', socket.id)
+        io.emit('disconnected', socket.id, reason)
 
         // remove the connection from the state
         delete users[socket.id]
