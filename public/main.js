@@ -27,6 +27,7 @@ function createSocket(
     return socket
 }
 
+// konva setup
 var width = window.innerWidth;
 var height = window.innerHeight * 0.7;
 
@@ -59,6 +60,7 @@ var text = new Konva.Text({
 group.add(text);
 layer.draw();
 
+// the circles of each user.
 const circles = {}
 
 
@@ -70,6 +72,7 @@ function hashCode(str) { // java String#hashCode
     }
     return hash;
 }
+
 function intToRGB(i) {
     var c = (i & 0x00FFFFFF)
         .toString(16)
@@ -89,6 +92,7 @@ function createCircle(s, socket_id) {
 
     return new Konva.Circle(obj);
 }
+
 
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
