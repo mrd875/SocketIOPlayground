@@ -2,6 +2,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
+const _ = require('lodash');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,7 +12,6 @@ const io = socketio(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
-
 
 // this is the state of the server
 const state = {}
@@ -43,7 +43,7 @@ io.on('connection', socket => {
         console.log('Got a userupdate from', socket.id, 'being:', e)
 
         // update our state
-        Object.assign(users[socket.id], e)
+        _.merge(users[socket.id], e)
 
         // send it out.
         io.emit('user_updated', socket.id, e)
@@ -57,7 +57,7 @@ io.on('connection', socket => {
         console.log('Got a stateupdate from', socket.id, 'being:', e)
 
         // update our state
-        Object.assign(state, e)
+        _.merge(state, e)
 
         // send it out.
         io.emit('state_updated', socket.id, e)
