@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 let state = {}
 let users = {}
 
+
 // https://stackoverflow.com/questions/30812765/how-to-remove-undefined-and-null-values-from-an-object-using-lodash/31209300
 const removeObjectsWithNull = (obj) => {
     return _(obj)

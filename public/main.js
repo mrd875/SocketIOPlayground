@@ -1,32 +1,3 @@
-function createSocket(
-    onInitState = (state, users) => {},
-    onSelfDisconnect = reason => {},
-    onUserConnected = socket_id => {},
-    onUserDisconnected = (socket_id, reason) => {},
-    onUserUpdated = (socket_id, payload_delta) => {},
-    onStateUpdated = (socket_id, payload_delta) => {}) {
-    const socket = io()
-
-    socket.on('init_state', onInitState)
-    socket.on('disconnect', onSelfDisconnect)
-    
-    socket.on('connected', onUserConnected)
-    socket.on('disconnected', onUserDisconnected)
-    socket.on('user_updated', onUserUpdated)
-
-    socket.on('state_updated', onStateUpdated)
-
-    socket.updateState = payload_delta => {
-        socket.emit('state_updated', payload_delta)
-    }
-
-    socket.updateUser = payload_delta => {
-        socket.emit('user_updated', payload_delta)
-    }
-
-    return socket
-}
-
 // konva setup
 var width = window.innerWidth;
 var height = window.innerHeight * 0.7;
@@ -97,14 +68,16 @@ function createCircle(s, socket_id) {
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
 
-const onInitState = (state, users) => {
+const gt = new GT()
+
+gt.on('init_state', (state, users) => {
     console.log('Got whole new state:', state, users)
 
     // draw a circle for each user... our OWN circle will be in here...
-    for (const socket_id in users) {
-        const circle = createCircle(users[socket_id], socket_id)
+    for (const id in users) {
+        const circle = createCircle(users[id], id)
         group.add(circle)
-        circles[socket_id] = circle
+        circles[id] = circle
     }
 
     // init the textareas from the state.
@@ -114,75 +87,72 @@ const onInitState = (state, users) => {
         textarea2.value = state.text2
 
     layer.batchDraw()
-}
+})
 
-const onSelfDisconnect = reason => {
+gt.on('disconnect', reason => {
     console.log(`We have disconnected (${reason}).`)
 
     // clean up the circles...
-    for (const socket_id in circles) {
-        const circle = circles[socket_id]
+    for (const id in circles) {
+        const circle = circles[id]
         circle.destroy()
-        delete circles[socket_id]
+        delete circles[id]
     }
     
     layer.batchDraw()
-}
+})
 
-const onUserConnected = socket_id => {
-    if (socket_id === socket.id) return // ignore our own connected message
-    console.log(`${socket_id} has connected.`)
+gt.on('connected', id => {
+    if (id === gt.id) return // ignore our own connected message
+    console.log(`${id} has connected.`)
 
     // create the circle
-    const circle = createCircle({}, socket_id)
+    const circle = createCircle({}, id)
     group.add(circle)
-    circles[socket_id] = circle
+    circles[id] = circle
 
     layer.batchDraw()
-}
+})
 
-const onUserDisconnected = socket_id => {
-    console.log(`${socket_id} has disconnected.`)
+gt.on('disconnect', id => {
+    console.log(`${id} has disconnected.`)
 
     // delete the circle
-    const circle = circles[socket_id]
+    const circle = circles[id]
     if (!circle) return
 
     circle.destroy()
     layer.batchDraw()
-    delete circles[socket_id]
-}
+    delete circles[id]
+})
 
-const onUserUpdated = (socket_id, payload_delta) => {
-    console.log('Got a userupdate:', socket_id, payload_delta)
+gt.on('user_updated', (id, payload_delta) => {
+    console.log('Got a userupdate:', id, payload_delta)
 
-    if (!socket_id || !payload_delta.x || !payload_delta.y) return //throw away bad messages
-    if (socket_id === socket.id) return // ignore our own...
+    if (!payload_delta.x || !payload_delta.y) return //throw away bad messages
+    if (id === gt.id) return // ignore our own...
 
     // update the user's circle.
-    const circle = circles[socket_id]
+    const circle = circles[id]
     if (!circle) return
 
     circle.x(payload_delta.x)
     circle.y(payload_delta.y)
 
     layer.batchDraw()
-}
+})
 
-const onStateUpdated = (socket_id, payload_delta) => {
-    console.log('Got a stateupdate:', socket_id, payload_delta)
+gt.on('state_updated', (id, payload_delta) => {
+    console.log('Got a stateupdate:', id, payload_delta)
 
-    if (socket_id === socket.id) return // ignore our own change
+    if (id === gt.id) return // ignore our own change
 
     if (payload_delta.text !== undefined)
         textarea.value = payload_delta.text
 
     if (payload_delta.text2 !== undefined)
         textarea2.value = payload_delta.text2
-}
-
-const socket = createSocket(onInitState, onSelfDisconnect, onUserConnected, onUserDisconnected, onUserUpdated, onStateUpdated)
-
+})
 
 
 // this function will return pointer position relative to the passed node
@@ -204,8 +174,8 @@ stage.on('mousemove', e => {
     var pos = getRelativePointerPosition(group);
 
     // move our own locally...
-    const socket_id = socket.id
-    const circle = circles[socket_id]
+    const id = gt.id
+    const circle = circles[id]
     if (!circle) return
 
     circle.x(pos.x)
@@ -214,7 +184,7 @@ stage.on('mousemove', e => {
     layer.batchDraw()
 
     // send the update
-    socket.updateUser(pos)
+    gt.updateUser(pos)
 });
 
 
@@ -223,11 +193,11 @@ textarea.addEventListener('input', e => {
     const text = e.target.value
 
     // and send the update to the server.
-    socket.updateState({ text })
+    gt.updateState({ text })
 })
 
 textarea2.addEventListener('input', e => {
     const text2 = e.target.value
 
-    socket.updateState({ text2 })
+    gt.updateState({ text2 })
 })
