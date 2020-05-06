@@ -102,20 +102,20 @@ gt.on('disconnect', reason => {
     layer.batchDraw()
 })
 
-gt.on('connected', id => {
+gt.on('connected', (id, user_payload) => {
     if (id === gt.id) return // ignore our own connected message
     console.log(`${id} has connected.`)
 
     // create the circle
-    const circle = createCircle({}, id)
+    const circle = createCircle(user_payload, id)
     group.add(circle)
     circles[id] = circle
 
     layer.batchDraw()
 })
 
-gt.on('disconnect', id => {
-    console.log(`${id} has disconnected.`)
+gt.on('disconnected', (id, reason) => {
+    console.log(`${id} has disconnected (${reason}).`)
 
     // delete the circle
     const circle = circles[id]

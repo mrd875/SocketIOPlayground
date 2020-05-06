@@ -37,11 +37,11 @@ io.on('connection', socket => {
         console.log(socket.rooms)
     }, 100)*/
 
-    // tell everyone someone connected
-    io.emit('connected', socket.id)
-
     // add the connection to the state...
     users[socket.id] = {}
+
+    // tell everyone someone connected
+    io.emit('connected', socket.id, users[socket.id])
 
     // notify new user of the current state...
     socket.emit('init_state', state, users);

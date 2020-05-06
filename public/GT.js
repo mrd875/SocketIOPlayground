@@ -51,8 +51,8 @@ class GT extends EventEmitter {
             this.emit('init_state', state, users)
         })
         
-        socket.on('connected', id => {
-            this.emit('connected', id)
+        socket.on('connected', (id, user) => {
+            this.emit('connected', id, user)
         })
         socket.on('disconnected', (id, reason) => {
             this.emit('disconnected', id, reason)
