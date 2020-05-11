@@ -57,18 +57,27 @@ class GT extends EventEmitter {
         socket.on('disconnected', (id, reason) => {
             this.emit('disconnected', id, reason)
         })
-        socket.on('user_updated', (id, payload_delta) => {
-            this.emit('user_updated', id, payload_delta)
+        
+        socket.on('user_updated_reliable', (id, payload_delta) => {
+            this.emit('user_updated_reliable', id, payload_delta)
+        })
+        socket.on('user_updated_unreliable', (id, payload_delta) => {
+            this.emit('user_updated_unreliable', id, payload_delta)
         })
 
-        socket.on('state_updated', (id, payload_delta) => {
-            this.emit('state_updated', id, payload_delta)
+        socket.on('state_updated_reliable', (id, payload_delta) => {
+            this.emit('state_updated_reliable', id, payload_delta)
+        })
+        socket.on('state_updated_unreliable', (id, payload_delta) => {
+            this.emit('state_updated_unreliable', id, payload_delta)
         })
 
         this.id = undefined
 
         socket.on('connect', () => {
             this.id = socket.id
+
+            this.emit('connect', socket.id)
         })
 
         socket.on('disconnect', reason => {
@@ -78,11 +87,19 @@ class GT extends EventEmitter {
         })
     }
 
-    updateState(payload_delta) {
-        this.socket.emit('state_updated', payload_delta)
+    updateStateReliable(payload_delta) {
+        this.socket.emit('state_updated_reliable', payload_delta)
     }
 
-    updateUser (payload_delta) {
-        this.socket.emit('user_updated', payload_delta)
+    updateStateUnreliable(payload_delta) {
+        this.socket.emit('state_updated_unreliable', payload_delta)
+    }
+
+    updateUserReliable(payload_delta) {
+        this.socket.emit('user_updated_reliable', payload_delta)
+    }
+
+    updateUserUnreliable(payload_delta) {
+        this.socket.emit('user_updated_unreliable', payload_delta)
     }
 }

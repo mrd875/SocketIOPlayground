@@ -126,8 +126,8 @@ gt.on('disconnected', (id, reason) => {
     delete circles[id]
 })
 
-gt.on('user_updated', (id, payload_delta) => {
-    console.log('Got a userupdate:', id, payload_delta)
+gt.on('user_updated_unreliable', (id, payload_delta) => {
+    console.log('Got a userupdateunreliable:', id, payload_delta)
 
     if (!payload_delta.x || !payload_delta.y) return //throw away bad messages
     if (id === gt.id) return // ignore our own...
@@ -142,8 +142,20 @@ gt.on('user_updated', (id, payload_delta) => {
     layer.batchDraw()
 })
 
-gt.on('state_updated', (id, payload_delta) => {
-    console.log('Got a stateupdate:', id, payload_delta)
+gt.on('state_updated_reliable', (id, payload_delta) => {
+    console.log('Got a stateupdatereliable:', id, payload_delta)
+
+    if (id === gt.id) return // ignore our own change
+
+    if (payload_delta.text !== undefined)
+        textarea.value = payload_delta.text
+
+    if (payload_delta.text2 !== undefined)
+        textarea2.value = payload_delta.text2
+})
+
+gt.on('state_updated_unreliable', (id, payload_delta) => {
+    console.log('Got a stateupdateunreliable:', id, payload_delta)
 
     if (id === gt.id) return // ignore our own change
 
@@ -184,7 +196,7 @@ stage.on('mousemove', e => {
     layer.batchDraw()
 
     // send the update
-    gt.updateUser(pos)
+    gt.updateUserUnreliable(pos)
 });
 
 
@@ -193,11 +205,25 @@ textarea.addEventListener('input', e => {
     const text = e.target.value
 
     // and send the update to the server.
-    gt.updateState({ text })
+    gt.updateStateUnreliable({ text })
+})
+
+textarea.addEventListener('change', e => {
+    const text = e.target.value
+
+    // and send the update to the server.
+    gt.updateStateReliable({ text })
 })
 
 textarea2.addEventListener('input', e => {
     const text2 = e.target.value
 
-    gt.updateState({ text2 })
+    gt.updateStateUnreliable({ text2 })
+})
+
+textarea2.addEventListener('change', e => {
+    const text2 = e.target.value
+
+    // and send the update to the server.
+    gt.updateStateReliable({ text2 })
 })
