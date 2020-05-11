@@ -136,8 +136,14 @@ gt.on('user_updated_unreliable', (id, payload_delta) => {
     const circle = circles[id]
     if (!circle) return
 
-    circle.x(payload_delta.x)
-    circle.y(payload_delta.y)
+    // client sided smoothing.
+    // instead of teleporting the circle, we will tween to the location
+    new Konva.Tween({
+        node: circle,
+        duration: 0.05, // server only allows 20 unreliable messages a second.
+        easing: Konva.Easings.Linear,
+        ...payload_delta
+      }).play()
 
     layer.batchDraw()
 })
