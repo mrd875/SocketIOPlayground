@@ -68,13 +68,17 @@ function createCircle(s, id) {
 }
 
 function createLine(points, lineId) {
-    return new Konva.Line({
+    const line = new Konva.Line({
         stroke: '#' + intToRGB(hashCode(lineId)),
         strokeWidth: 15,
         points,
         lineCap: 'round',
         lineJoin: 'round',
     })
+
+    line.lineId = lineId
+
+    return line
 }
 
 // this function will return pointer position relative to the passed node
@@ -210,10 +214,18 @@ gt.on('state_updated_reliable', (id, payload_delta) => {
         for (const lineId in payload_delta.lines) {
             const lineObj = payload_delta.lines[lineId]
 
-            const line = createLine(lineObj.points, lineId)
+            if (lineObj !== null) {
+                const line = createLine(lineObj.points, lineId)
 
-            lines[lineId] = line
-            group.add(line)
+                lines[lineId] = line
+                group.add(line)
+            } else {
+                const line = lines[lineId]
+
+                line.destroy()
+                delete lines[lineId]
+            }
+            
         }
 
         layer.batchDraw()
@@ -251,6 +263,7 @@ stage.on('mousemove', e => {
     gt.updateUserUnreliable(pos)
 })
 
+// dragging for lines
 stage.on('dragstart', e => {
     const pos = getRelativePointerPosition(group);
     stage.stopDrag()
@@ -287,6 +300,28 @@ stage.on('dragstart', e => {
         })
     }
     stage.on('mouseup', dragend)
+})
+
+// click to destroy lines
+stage.on('click', e => {
+    const line = e.target
+
+    if (!line) return
+    if (line.className !== 'Line') return
+
+    const lineId = line.lineId
+
+    line.destroy()
+    delete lines[lineId]
+
+    layer.batchDraw()
+
+    // send the delete message
+    gt.updateStateReliable({
+        lines: {
+            [lineId]: null
+        }
+    })
 })
 
 
