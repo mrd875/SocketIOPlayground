@@ -59,10 +59,9 @@ function createCircle(s, id) {
     const obj = {
         fill: '#' + intToRGB(hashCode(id)),
         radius: 20,
+        listening: false,
+        ...s
     }
-
-    if (s.x) obj.x = s.x
-    if (s.y) obj.y = s.y
 
     return new Konva.Circle(obj);
 }
@@ -73,7 +72,7 @@ function createLine(points, lineId) {
         strokeWidth: 15,
         points,
         lineCap: 'round',
-        lineJoin: 'round',
+        lineJoin: 'round'
     })
 
     line.lineId = lineId
@@ -155,6 +154,8 @@ gt.on('init_state', (state, users) => {
 
             group.add(line)
             lines[lineId] = line
+
+            line.zIndex(2)
 
             fadeInNode(line)
         }
@@ -257,6 +258,8 @@ gt.on('state_updated_reliable', (id, payload_delta) => {
 
                 lines[lineId] = line
                 group.add(line)
+
+                line.zIndex(2)
             } else {
                 const line = lines[lineId]
 
@@ -325,6 +328,8 @@ stage.on('dragstart', e => {
 
     lines[lineId] = line
     group.add(line)
+    
+    line.zIndex(2)
 
     layer.batchDraw()
 
