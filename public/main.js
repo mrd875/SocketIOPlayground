@@ -95,6 +95,32 @@ function getRelativePointerPosition(node) {
 }
 
 
+function fadeInNode(node) {
+    node.opacity(0)
+
+    // fade in
+    new Konva.Tween({
+        node: node,
+        duration: 0.5,
+        easing: Konva.Easings.Linear,
+        opacity: 1
+      }).play()
+}
+
+function fadeOutAndDestroyNode(node) {
+    // fade and destroy
+    new Konva.Tween({
+        node: node,
+        duration: 0.5,
+        easing: Konva.Easings.Linear,
+        opacity: 0,
+        onFinish() {
+            node.destroy()
+        }
+      }).play()
+}
+
+
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
 
@@ -106,8 +132,11 @@ gt.on('init_state', (state, users) => {
     // draw a circle for each user... our OWN circle will be in here...
     for (const id in users) {
         const circle = createCircle(users[id], id)
+
         group.add(circle)
         circles[id] = circle
+
+        fadeInNode(circle)
     }
 
     // init the textareas from the state.
@@ -122,8 +151,11 @@ gt.on('init_state', (state, users) => {
             const lineObj = state.lines[lineId]
 
             const line = createLine(Object.values(lineObj.points), lineId)
+
             group.add(line)
             lines[lineId] = line
+
+            fadeInNode(line)
         }
     }
 
@@ -136,15 +168,17 @@ gt.on('disconnect', reason => {
     // clean up the circles...
     for (const id in circles) {
         const circle = circles[id]
-        circle.destroy()
         delete circles[id]
+
+        fadeOutAndDestroyNode(circle)
     }
 
     // clean up the lines
     for (const id in lines) {
         const line = lines[id]
-        line.destroy()
         delete lines[id]
+
+        fadeOutAndDestroyNode(line)
     }
 
     textarea2.value = ''    
@@ -163,6 +197,8 @@ gt.on('connected', (id, user_payload) => {
     group.add(circle)
     circles[id] = circle
 
+    fadeInNode(circle)
+
     layer.batchDraw()
 })
 
@@ -173,9 +209,10 @@ gt.on('disconnected', (id, reason) => {
     const circle = circles[id]
     if (!circle) return
 
-    circle.destroy()
     layer.batchDraw()
     delete circles[id]
+
+    fadeOutAndDestroyNode(circle)
 })
 
 gt.on('user_updated_unreliable', (id, payload_delta) => {
@@ -222,8 +259,9 @@ gt.on('state_updated_reliable', (id, payload_delta) => {
             } else {
                 const line = lines[lineId]
 
-                line.destroy()
                 delete lines[lineId]
+
+                fadeOutAndDestroyNode(line)
             }
             
         }
@@ -337,8 +375,9 @@ stage.on('click', e => {
 
     const lineId = line.lineId
 
-    line.destroy()
     delete lines[lineId]
+
+    fadeOutAndDestroyNode(line)
 
     layer.batchDraw()
 
