@@ -108,6 +108,7 @@ function fadeInNode(node) {
 }
 
 function fadeOutAndDestroyNode(node) {
+    node.listening(false)
     // fade and destroy
     new Konva.Tween({
         node: node,
