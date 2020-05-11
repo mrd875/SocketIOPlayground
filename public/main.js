@@ -68,7 +68,7 @@ function createCircle(s, socket_id) {
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
 
-const gt = new GT()
+const gt = new GT('localhost:3000')
 
 gt.on('init_state', (state, users) => {
     console.log('Got whole new state:', state, users)

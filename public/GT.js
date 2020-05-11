@@ -39,10 +39,10 @@ class EventEmitter {
 }
 
 class GT extends EventEmitter {
-    constructor() {
+    constructor(server_ip) {
         super()
 
-        const socket = io()
+        const socket = io(server_ip)
 
         this.socket = socket
 
