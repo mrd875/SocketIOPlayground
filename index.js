@@ -12,7 +12,7 @@ const io = socketio(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
-const BURST_DELAY = 50 // 20 tickrate
+const BURST_DELAY = 50 //ms, 20 tickrate
 
 // this is the state of the server
 let state = {}

@@ -124,7 +124,7 @@ function fadeOutAndDestroyNode(node) {
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
 
-const gt = new GT('localhost:3000')
+const gt = new GT()
 
 gt.on('init_state', (state, users) => {
     console.log('Got whole new state:', state, users)
@@ -300,7 +300,7 @@ gt.on('state_updated_unreliable', (id, payload_delta) => {
 
 
 // when a mouse move happens, lets push the event to the server.
-stage.on('mousemove', e => {
+stage.on('mousemove touchmove', e => {
     const pos = getRelativePointerPosition(group);
 
     // move our own locally...
@@ -362,18 +362,18 @@ stage.on('dragstart', e => {
         line.points(points.concat([pos.x, pos.y]))
         layer.batchDraw()
     }
-    stage.on('mousemove', dragmove)
+    stage.on('mousemove touchmove', dragmove)
 
     // send to server our line
     const dragend = e => {
-        stage.off('mousemove', dragmove)
-        stage.off('mouseup', dragend)
+        stage.off('mousemove touchmove', dragmove)
+        stage.off('mouseup touchend', dragend)
     }
-    stage.on('mouseup', dragend)
+    stage.on('mouseup touchend', dragend)
 })
 
 // click to destroy lines
-stage.on('click', e => {
+stage.on('click tap', e => {
     const line = e.target
 
     if (!line) return
