@@ -242,6 +242,18 @@ gt.on('state_updated_unreliable', (id, payload_delta) => {
 
     if (payload_delta.text2 !== undefined)
         textarea2.value = payload_delta.text2
+
+    if (payload_delta.lines) {
+        for (const lineId in payload_delta.lines) {
+            const lineObj = payload_delta.lines[lineId]
+
+            const line = lines[lineId]
+
+            line.points(line.points().concat(Object.values(lineObj.points)))
+
+            layer.batchDraw()
+        }
+    }
 })
 
 
@@ -277,11 +289,33 @@ stage.on('dragstart', e => {
 
     layer.batchDraw()
 
+    // tell everyone we created a new line
+    gt.updateStateReliable({
+        lines: {
+            [lineId]: {
+                points: line.points()
+            }
+        }
+    })
+
     // add points to the line as we drag
     const dragmove = e => {
         const pos = getRelativePointerPosition(group);
+        const points = line.points()
 
-        line.points(line.points().concat([pos.x, pos.y]))
+        // add our points. the changes will be queued up
+        gt.updateStateUnreliable({
+            lines: {
+                [lineId]: {
+                    points: {
+                        [points.length]: pos.x,
+                        [points.length + 1]: pos.y,
+                    }
+                }
+            }
+        })
+
+        line.points(points.concat([pos.x, pos.y]))
         layer.batchDraw()
     }
     stage.on('mousemove', dragmove)
@@ -290,14 +324,6 @@ stage.on('dragstart', e => {
     const dragend = e => {
         stage.off('mousemove', dragmove)
         stage.off('mouseup', dragend)
-
-        gt.updateStateReliable({
-            lines: {
-                [lineId]: {
-                    points: line.points()
-                }
-            }
-        })
     }
     stage.on('mouseup', dragend)
 })
