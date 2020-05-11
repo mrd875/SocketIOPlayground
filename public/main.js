@@ -8,6 +8,7 @@ var stage = new Konva.Stage({
     height: height,
     x: 20,
     y: 50,
+    draggable: true
 });
 
 var layer = new Konva.Layer({
@@ -34,6 +35,8 @@ layer.draw();
 // the circles of each user.
 const circles = {}
 
+const lines = {}
+
 
 // https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
 function hashCode(str) { // java String#hashCode
@@ -52,9 +55,9 @@ function intToRGB(i) {
     return "00000".substring(0, 6 - c.length) + c;
 }
 
-function createCircle(s, socket_id) {
+function createCircle(s, id) {
     const obj = {
-        fill: '#' + intToRGB(hashCode(socket_id)),
+        fill: '#' + intToRGB(hashCode(id)),
         radius: 20,
     }
 
@@ -62,6 +65,29 @@ function createCircle(s, socket_id) {
     if (s.y) obj.y = s.y
 
     return new Konva.Circle(obj);
+}
+
+function createLine(points, lineId) {
+    return new Konva.Line({
+        stroke: '#' + intToRGB(hashCode(lineId)),
+        strokeWidth: 15,
+        points,
+        lineCap: 'round',
+        lineJoin: 'round',
+    })
+}
+
+// this function will return pointer position relative to the passed node
+function getRelativePointerPosition(node) {
+    var transform = node.getAbsoluteTransform().copy();
+    // to detect relative position we need to invert transform
+    transform.invert();
+
+    // get pointer (say mouse or touch) position
+    var pos = node.getStage().getPointerPosition();
+
+    // now we can find relative point
+    return transform.point(pos);
 }
 
 
@@ -86,6 +112,17 @@ gt.on('init_state', (state, users) => {
     if (state.text2 !== undefined)
         textarea2.value = state.text2
 
+    // init the lines
+    if (state.lines) {
+        for (const lineId in state.lines) {
+            const lineObj = state.lines[lineId]
+
+            const line = createLine(Object.values(lineObj.points), lineId)
+            group.add(line)
+            lines[lineId] = line
+        }
+    }
+
     layer.batchDraw()
 })
 
@@ -98,6 +135,17 @@ gt.on('disconnect', reason => {
         circle.destroy()
         delete circles[id]
     }
+
+    // clean up the lines
+    for (const id in lines) {
+        const line = lines[id]
+        line.destroy()
+        delete lines[id]
+    }
+
+    textarea2.value = ''    
+    textarea.value = ''    
+
     
     layer.batchDraw()
 })
@@ -144,8 +192,6 @@ gt.on('user_updated_unreliable', (id, payload_delta) => {
         easing: Konva.Easings.Linear,
         ...payload_delta
       }).play()
-
-    layer.batchDraw()
 })
 
 gt.on('state_updated_reliable', (id, payload_delta) => {
@@ -158,6 +204,20 @@ gt.on('state_updated_reliable', (id, payload_delta) => {
 
     if (payload_delta.text2 !== undefined)
         textarea2.value = payload_delta.text2
+
+    // we recieved a line
+    if (payload_delta.lines) {
+        for (const lineId in payload_delta.lines) {
+            const lineObj = payload_delta.lines[lineId]
+
+            const line = createLine(lineObj.points, lineId)
+
+            lines[lineId] = line
+            group.add(line)
+        }
+
+        layer.batchDraw()
+    }
 })
 
 gt.on('state_updated_unreliable', (id, payload_delta) => {
@@ -173,23 +233,9 @@ gt.on('state_updated_unreliable', (id, payload_delta) => {
 })
 
 
-// this function will return pointer position relative to the passed node
-function getRelativePointerPosition(node) {
-    var transform = node.getAbsoluteTransform().copy();
-    // to detect relative position we need to invert transform
-    transform.invert();
-
-    // get pointer (say mouse or touch) position
-    var pos = node.getStage().getPointerPosition();
-
-    // now we can find relative point
-    return transform.point(pos);
-}
-
-
 // when a mouse move happens, lets push the event to the server.
 stage.on('mousemove', e => {
-    var pos = getRelativePointerPosition(group);
+    const pos = getRelativePointerPosition(group);
 
     // move our own locally...
     const id = gt.id
@@ -203,7 +249,45 @@ stage.on('mousemove', e => {
 
     // send the update
     gt.updateUserUnreliable(pos)
-});
+})
+
+stage.on('dragstart', e => {
+    const pos = getRelativePointerPosition(group);
+    stage.stopDrag()
+
+    // init the line
+    const lineId = Math.random().toString(36).replace('0.', '')
+    const line = createLine([pos.x, pos.y], lineId)
+
+    lines[lineId] = line
+    group.add(line)
+
+    layer.batchDraw()
+
+    // add points to the line as we drag
+    const dragmove = e => {
+        const pos = getRelativePointerPosition(group);
+
+        line.points(line.points().concat([pos.x, pos.y]))
+        layer.batchDraw()
+    }
+    stage.on('mousemove', dragmove)
+
+    // send to server our line
+    const dragend = e => {
+        stage.off('mousemove', dragmove)
+        stage.off('mouseup', dragend)
+
+        gt.updateStateReliable({
+            lines: {
+                [lineId]: {
+                    points: line.points()
+                }
+            }
+        })
+    }
+    stage.on('mouseup', dragend)
+})
 
 
 // listen for the textareas changing...
