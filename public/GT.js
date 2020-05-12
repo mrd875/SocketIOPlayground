@@ -42,7 +42,9 @@ class GT extends EventEmitter {
     constructor(server_ip) {
         super()
 
-        const socket = io(server_ip)
+        const socket = io(server_ip, {
+            autoConnect: false
+        })
 
         this.socket = socket
 
@@ -85,6 +87,18 @@ class GT extends EventEmitter {
 
             this.id = undefined
         })
+    }
+
+    isConnected() {
+        return this.id !== undefined
+    }
+
+    connect() {
+        this.socket.connect()
+    }
+
+    disconnect() {
+        this.socket.disconnect()
     }
 
     updateStateReliable(payload_delta) {

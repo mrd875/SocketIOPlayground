@@ -126,6 +126,20 @@ const textarea2 = document.getElementById('livetext2')
 
 const gt = new GT()
 
+const btn = document.getElementById('btn')
+
+btn.addEventListener('click', e => {
+    if (gt.isConnected()) {
+        gt.disconnect()
+    } else {
+        console.log('We are trying to connect.')
+        gt.connect()
+
+        btn.innerText = 'connecting...'
+        btn.disabled = true
+    }
+})
+
 gt.on('init_state', (state, users) => {
     console.log('Got whole new state:', state, users)
 
@@ -164,6 +178,16 @@ gt.on('init_state', (state, users) => {
     layer.batchDraw()
 })
 
+gt.on('connect', id => {
+    console.log(`We have connected, (${id}).`)
+
+    textarea.disabled = false
+    textarea2.disabled = false
+
+    btn.innerText = 'disconnect'
+    btn.disabled = false
+})
+
 gt.on('disconnect', reason => {
     console.log(`We have disconnected (${reason}).`)
 
@@ -184,7 +208,12 @@ gt.on('disconnect', reason => {
     }
 
     textarea2.value = ''    
-    textarea.value = ''    
+    textarea.value = ''  
+    
+    textarea.disabled = true
+    textarea2.disabled = true
+
+    btn.innerText = 'connect'
 
     
     layer.batchDraw()
@@ -321,6 +350,8 @@ stage.on('mousemove touchmove', e => {
 stage.on('dragstart', e => {
     const pos = getRelativePointerPosition(group);
     stage.stopDrag()
+
+    if (!gt.isConnected()) return
 
     // init the line
     const lineId = Math.random().toString(36).replace('0.', '')
