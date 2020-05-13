@@ -88,6 +88,10 @@ class GT extends EventEmitter {
 
             this.id = undefined
         })
+
+        socket.on('connect_error', error => {
+            this.emit('connect_error', error)
+        })
     }
 
     isConnected() {
@@ -95,6 +99,8 @@ class GT extends EventEmitter {
     }
 
     connect(room, user_payload) {
+        if (this.isConnected()) return
+
         this.socket.connect()
 
         this.socket.once('connect', () => {
@@ -103,6 +109,8 @@ class GT extends EventEmitter {
     }
 
     disconnect() {
+        if (!this.isConnected()) return
+
         this.socket.disconnect()
     }
 

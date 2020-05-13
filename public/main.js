@@ -231,6 +231,14 @@ gt.on('connect', id => {
     btn.disabled = false
 })
 
+gt.on('connect_error', error => {
+    btn.innerText = 'connect'
+    btn.disabled = false
+    room.disabled = false
+
+    alert(error.toString())
+})
+
 gt.on('disconnect', reason => {
     console.log(`We have disconnected (${reason}).`)
 
