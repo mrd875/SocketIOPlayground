@@ -13,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 const BURST_DELAY = 50 //ms, 20 tickrate
+const NO_ROOM_TIME = 10000
 
 // this is the state of the server
 
@@ -47,10 +48,16 @@ io.on('connection', socket => {
     // init the state of the user
     socket.state = {}
 
+
+    const kickOnNoRoom = setTimeout(() => {
+        socket.disconnect()
+    }, NO_ROOM_TIME)
     // now we need to get what room the client wants in on.
     socket.once('join_room', room => {
         console.log(`${socket.id} is joining room: ${room}`)
         socket.join(room, () => {
+            clearTimeout(kickOnNoRoom)
+
             // init the state of the room
             if (!rooms[room]) rooms[room] = {}
             const roomObj = rooms[room] // io.sockets.adapter.rooms[room]

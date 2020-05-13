@@ -143,8 +143,8 @@ btn.addEventListener('click', e => {
     }
 })
 
-gt.on('init_state', (state, users) => {
-    console.log('Got whole new state:', state, users)
+gt.on('init_state', (state, users, room) => {
+    console.log('Got whole new state:', state, users, room)
 
     // draw a circle for each user... our OWN circle will be in here...
     for (const id in users) {

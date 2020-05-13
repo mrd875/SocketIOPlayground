@@ -43,14 +43,15 @@ class GT extends EventEmitter {
         super()
 
         const socket = io(server_ip, {
-            autoConnect: false
+            autoConnect: false,
+            reconnection: false
         })
 
         this.socket = socket
 
         // setup the events.
-        socket.on('init_state', (state, users) => {
-            this.emit('init_state', state, users)
+        socket.on('init_state', (state, users, room) => {
+            this.emit('init_state', state, users, room)
         })
         
         socket.on('connected', (id, user) => {
