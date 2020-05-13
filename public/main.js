@@ -120,6 +120,29 @@ function fadeOutAndDestroyNode(node) {
       }).play()
 }
 
+function addUserToList(user, id) {
+    const li = document.createElement('li')
+    li.id = `user-${id}`
+
+    li.innerHTML = `<span>${user.name}</span>`
+
+    users.appendChild(li)
+}
+
+function removeUserFromList(id) {
+    const li = document.getElementById(`user-${id}`)
+
+    if (li)
+        li.parentNode.removeChild(li)
+}
+
+function updateUser(user, id) {
+    const li = document.getElementById(`user-${id}`)
+
+    if (li)
+        li.innerHTML = `<span>${user.name}</span>`
+}
+
 const gt = new GT()
 
 const textarea = document.getElementById('livetext')
@@ -129,6 +152,16 @@ const btn = document.getElementById('btn')
 const room = document.getElementById('room')
 const name = document.getElementById('name')
 const users = document.getElementById('users')
+
+name.addEventListener('input', e => {
+    const name = e.target.value
+
+    // update locally,
+    updateUser({name}, gt.id)
+
+    // send to server
+    gt.updateUserReliable({name})
+})
 
 btn.addEventListener('click', e => {
     if (gt.isConnected()) {
@@ -159,6 +192,8 @@ gt.on('init_state', (state, users, room) => {
         circles[id] = circle
 
         fadeInNode(circle)
+
+        addUserToList(users[id], id)
     }
 
     // init the textareas from the state.
@@ -205,6 +240,8 @@ gt.on('disconnect', reason => {
         delete circles[id]
 
         fadeOutAndDestroyNode(circle)
+
+        removeUserFromList(id)
     }
 
     // clean up the lines
@@ -240,6 +277,8 @@ gt.on('connected', (id, user_payload) => {
     fadeInNode(circle)
 
     layer.batchDraw()
+
+    addUserToList(user_payload, id)
 })
 
 gt.on('disconnected', (id, reason) => {
@@ -253,6 +292,16 @@ gt.on('disconnected', (id, reason) => {
     delete circles[id]
 
     fadeOutAndDestroyNode(circle)
+    removeUserFromList(id)
+})
+
+gt.on('user_updated_reliable', (id, payload_delta) => {
+    console.log('Got a userupdatereliable:', id, payload_delta)
+
+    if (!payload_delta.name) return //throw away bad messages
+    if (id === gt.id) return // ignore our own...
+
+    updateUser(payload_delta, id)
 })
 
 gt.on('user_updated_unreliable', (id, payload_delta) => {
