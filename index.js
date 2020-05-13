@@ -29,6 +29,7 @@ const removeObjectsWithNull = (obj) => {
 };
 
 const getUsersFromRoom = (room) => {
+    if (!io.sockets.adapter.rooms[room]) return null
     const userIds = Object.keys(io.sockets.adapter.rooms[room].sockets)
     const users = {}
 
@@ -40,6 +41,18 @@ const getUsersFromRoom = (room) => {
 }
 
 const rooms = {}
+
+app.get('/rooms', (req, res) => {
+    res.json(rooms)
+})
+
+app.get('/room', (req, res) => {
+    res.json(getUsersFromRoom(''));    
+  })
+
+app.get('/room/:id', (req, res) => {
+    res.json(getUsersFromRoom(req.params.id));    
+  })
 
 // listen for a connection.
 io.on('connection', socket => {
