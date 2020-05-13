@@ -134,7 +134,7 @@ btn.addEventListener('click', e => {
         gt.disconnect()
     } else {
         console.log('We are trying to connect.')
-        gt.connect()
+        gt.connect(room.value)
 
         btn.innerText = 'connecting...'
         btn.disabled = true
