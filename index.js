@@ -53,10 +53,13 @@ io.on('connection', socket => {
         socket.disconnect()
     }, NO_ROOM_TIME)
     // now we need to get what room the client wants in on.
-    socket.once('join_room', room => {
-        console.log(`${socket.id} is joining room: ${room}`)
+    socket.once('join_room', (room, user_payload) => {
+        console.log(`${socket.id} is joining room: ${room}, ${user_payload}`)
         socket.join(room, () => {
             clearTimeout(kickOnNoRoom)
+
+            // set user state if passed with one.
+            if (user_payload) socket.state = user_payload
 
             // init the state of the room
             if (!rooms[room]) rooms[room] = {}

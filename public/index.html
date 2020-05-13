@@ -7,10 +7,12 @@
 </head>
 <body>
     <button id="btn">connect</button>
-    <input type="text" name="room" id="room">
+    <input type="text" name="room" id="room" placeholder="room">
+    <input type="text" name="name" id="name" placeholder="username">
     <div id="container"></div>
     <textarea name="live" id="livetext" cols="30" rows="10" disabled="true"></textarea>
     <textarea name="live" id="livetext2" cols="30" rows="10" disabled="true"></textarea>
+    <ul id="users"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/konva@4.0.0/konva.min.js"></script>
     <script src="GT.js"></script>

@@ -94,11 +94,11 @@ class GT extends EventEmitter {
         return this.id !== undefined
     }
 
-    connect(room) {
+    connect(room, user_payload) {
         this.socket.connect()
 
         this.socket.once('connect', () => {
-            this.socket.emit('join_room', room)
+            this.socket.emit('join_room', room, user_payload)
         })
     }
 

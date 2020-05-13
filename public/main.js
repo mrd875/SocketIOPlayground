@@ -120,21 +120,26 @@ function fadeOutAndDestroyNode(node) {
       }).play()
 }
 
+const gt = new GT()
 
 const textarea = document.getElementById('livetext')
 const textarea2 = document.getElementById('livetext2')
 
-const gt = new GT()
-
 const btn = document.getElementById('btn')
 const room = document.getElementById('room')
+const name = document.getElementById('name')
+const users = document.getElementById('users')
 
 btn.addEventListener('click', e => {
     if (gt.isConnected()) {
         gt.disconnect()
     } else {
         console.log('We are trying to connect.')
-        gt.connect(room.value)
+        gt.connect(room.value, {
+            x: 0,
+            y: 0,
+            name: name.value
+        })
 
         btn.innerText = 'connecting...'
         btn.disabled = true
