@@ -38,6 +38,8 @@ const getUsersFromRoom = (room) => {
     return users
 }
 
+const rooms = {}
+
 // listen for a connection.
 io.on('connection', socket => {
     console.log(`${socket.id} has connected.`)
@@ -50,7 +52,8 @@ io.on('connection', socket => {
         console.log(`${socket.id} is joining room: ${room}`)
         socket.join(room, () => {
             // init the state of the room
-            const roomObj = io.sockets.adapter.rooms[room]
+            if (!rooms[room]) rooms[room] = {}
+            const roomObj = rooms[room] // io.sockets.adapter.rooms[room]
             if (!roomObj.state) roomObj.state = {}
 
             // tell everyone someone connected
