@@ -124,7 +124,7 @@ function addUserToList(user, id) {
     const li = document.createElement('li')
     li.id = `user-${id}`
 
-    li.innerHTML = `<span>${user.name}</span>`
+    li.innerText = `${user.name}`
 
     users.appendChild(li)
 }
@@ -140,7 +140,7 @@ function updateUser(user, id) {
     const li = document.getElementById(`user-${id}`)
 
     if (li)
-        li.innerHTML = `<span>${user.name}</span>`
+        li.innerText = `${user.name}`
 }
 
 const gt = new GT()
@@ -298,7 +298,7 @@ gt.on('disconnected', (id, reason) => {
 gt.on('user_updated_reliable', (id, payload_delta) => {
     console.log('Got a userupdatereliable:', id, payload_delta)
 
-    if (!payload_delta.name) return //throw away bad messages
+    if (!name in payload_delta) return //throw away bad messages
     if (id === gt.id) return // ignore our own...
 
     updateUser(payload_delta, id)
