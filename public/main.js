@@ -127,6 +127,7 @@ const textarea2 = document.getElementById('livetext2')
 const gt = new GT()
 
 const btn = document.getElementById('btn')
+const room = document.getElementById('room')
 
 btn.addEventListener('click', e => {
     if (gt.isConnected()) {
@@ -137,6 +138,8 @@ btn.addEventListener('click', e => {
 
         btn.innerText = 'connecting...'
         btn.disabled = true
+
+        room.disabled = true
     }
 })
 
@@ -214,6 +217,7 @@ gt.on('disconnect', reason => {
     textarea2.disabled = true
 
     btn.innerText = 'connect'
+    room.disabled = false
 
     
     layer.batchDraw()
