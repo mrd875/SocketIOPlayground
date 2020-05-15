@@ -1,33 +1,38 @@
-const path = require('path');
-const http = require('http');
-const express = require('express');
-const socketio = require('socket.io');
-const _ = require('lodash');
+const path = require('path')
+const http = require('http')
+const express = require('express')
+const socketio = require('socket.io')
+const _ = require('lodash')
 
-const app = express();
-const server = http.createServer(app);
-const io = socketio(server);
+const app = express()
+const server = http.createServer(app)
+const io = socketio(server)
 
 // Set static folder
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')))
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
+
+// the time at which unreliable messages will collapse and queue and then fire.
 const BURST_DELAY = 50 //ms, 20 tickrate
+
+// the time at which a client has to send a join room message after connecting.
+// the client will be kicked after if they didn't join a room.
 const NO_ROOM_TIME = 10000
 
-// this is the state of the server
-
-
 // https://stackoverflow.com/questions/30812765/how-to-remove-undefined-and-null-values-from-an-object-using-lodash/31209300
+// returns the object that has all null value'd keys removed.
 const removeObjectsWithNull = (obj) => {
     return _(obj)
       .pickBy(_.isObject) // get only objects
       .mapValues(removeObjectsWithNull) // call only for values as objects
       .assign(_.omitBy(obj, _.isObject)) // save back result that is not object
       .omitBy(_.isNil) // remove null and undefined from object
-      .value(); // get value
+      .value() // get value
 };
 
+// returns all users for the given room.
+// key'd by userId, value being the user's state.
 const getUsersFromRoom = (room) => {
     if (!io.sockets.adapter.rooms[room]) return null
     const userIds = Object.keys(io.sockets.adapter.rooms[room].sockets)
@@ -40,19 +45,21 @@ const getUsersFromRoom = (room) => {
     return users
 }
 
+// all the states for each room.
+// key'd by room name, value being the room's state.
 const rooms = {}
 
+// debug http endpoints to view the state.
 app.get('/rooms', (req, res) => {
     res.json(rooms)
 })
-
 app.get('/room', (req, res) => {
-    res.json(getUsersFromRoom(''));    
-  })
-
+    res.json(getUsersFromRoom(''))
+})
 app.get('/room/:id', (req, res) => {
-    res.json(getUsersFromRoom(req.params.id));    
-  })
+    res.json(getUsersFromRoom(req.params.id))
+})
+
 
 // listen for a connection.
 io.on('connection', socket => {
@@ -61,15 +68,18 @@ io.on('connection', socket => {
     // init the state of the user
     socket.state = {}
 
-
+    // kick the client if they dont join a room.
     const kickOnNoRoom = setTimeout(() => {
         socket.disconnect()
     }, NO_ROOM_TIME)
+
     // now we need to get what room the client wants in on.
     socket.once('join_room', (room, user_payload) => {
         console.log(`${socket.id} is joining room: ${room}, ${user_payload}`)
+
+        // have the socket join the room
         socket.join(room, () => {
-            clearTimeout(kickOnNoRoom)
+            clearTimeout(kickOnNoRoom) // disable the kick
 
             // set user state if passed with one.
             if (user_payload) socket.state = user_payload
@@ -84,6 +94,7 @@ io.on('connection', socket => {
 
             // notify new user of the current state...
             socket.emit('init_state', roomObj.state, getUsersFromRoom(room), room)
+
 
             // listen for messages now...
 
@@ -212,4 +223,4 @@ io.on('connection', socket => {
 })
 
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`))

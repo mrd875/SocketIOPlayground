@@ -357,6 +357,7 @@ gt.on('state_updated_reliable', (id, payload_delta) => {
                 line.zIndex(2)
             } else {
                 const line = lines[lineId]
+                if (!line) continue
 
                 delete lines[lineId]
 
@@ -385,11 +386,12 @@ gt.on('state_updated_unreliable', (id, payload_delta) => {
             const lineObj = payload_delta.lines[lineId]
 
             const line = lines[lineId]
+            if (!line) continue
 
             line.points(line.points().concat(Object.values(lineObj.points)))
-
-            layer.batchDraw()
         }
+
+        layer.batchDraw()
     }
 })
 
@@ -441,6 +443,8 @@ stage.on('dragstart', e => {
 
     // add points to the line as we drag
     const dragmove = e => {
+        if (!line) return
+
         const pos = getRelativePointerPosition(group);
         const points = line.points()
 
@@ -494,6 +498,7 @@ stage.on('click tap', e => {
 
 
 // listen for the textareas changing...
+// send the changes to the server.
 textarea.addEventListener('input', e => {
     const text = e.target.value
 
@@ -504,7 +509,6 @@ textarea.addEventListener('input', e => {
 textarea.addEventListener('change', e => {
     const text = e.target.value
 
-    // and send the update to the server.
     gt.updateStateReliable({ text })
 })
 
@@ -517,6 +521,5 @@ textarea2.addEventListener('input', e => {
 textarea2.addEventListener('change', e => {
     const text2 = e.target.value
 
-    // and send the update to the server.
     gt.updateStateReliable({ text2 })
 })
