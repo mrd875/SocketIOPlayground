@@ -13,7 +13,7 @@ npm run dev
 The Node Server will be running and will host the client at http://localhost:3000
 
 This is an example of a realtime web app with a few features:
-- Multiroom
+- Rooms
 - Cursors on the canvas
 - Drawing lines on the canvas by dragging
 - Deleting lines on the canvas by clicking
