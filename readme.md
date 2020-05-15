@@ -20,6 +20,8 @@ This is an example of a realtime web app with a few features:
 - Text areas
 - Listing users with synced usernames
 
+Choose a room to join, choose a username, and click connect.
+
 ## How it works
 
 This is a socket.io server/client application. Its designed to abstract away communication of messages from a foreign source from developers.
