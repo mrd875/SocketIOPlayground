@@ -1,5 +1,5 @@
 # Socket.IO Cursor Demo
-Realtime web app with websockets using Node.js, Express and Socket.io with Vanilla JS on the frontend
+Realtime web app with websockets using Node.js, Express and Socket.io with Vanilla JS on the frontend with Konva.
 
 ## Usage
 ```bash
@@ -12,6 +12,13 @@ npm run dev
 
 The Node Server will be running and will host the client at http://localhost:3000
 
+This is an example of a realtime web app with a few features:
+- Multiroom
+- Cursors on the canvas
+- Drawing lines on the canvas by dragging
+- Deleting lines on the canvas by clicking
+- Text areas
+- Listing users with synced usernames
 
 ## How it works
 
@@ -51,3 +58,5 @@ A reply will be emitted to all users within the room, containing the same delta 
 
 
 It will be entirely up to the clients (developers) to keep track of the state and messages they receive from the server, they receive enough information from the server so that they will be able to keep track and keep a consistent application going.
+
+A developer can use the GT object on the client side to communicate with the server. The GT object will emit events to the developer and allow developers to send messages.

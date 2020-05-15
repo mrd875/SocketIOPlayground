@@ -154,7 +154,6 @@ class GT extends EventEmitter {
 
         // setup the events.
         socket.on('init_state', (state, users, room) => {
-
             this.emit('init_state', state, users, room)
         })
 
