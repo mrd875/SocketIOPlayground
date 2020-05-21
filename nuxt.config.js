@@ -49,6 +49,7 @@ module.exports = {
     ** You can extend webpack config here
     */
     extend (config, ctx) {
+      config.devtool = ctx.isClient ? 'source-map' : 'inline-source-map'
     }
   }
 }
