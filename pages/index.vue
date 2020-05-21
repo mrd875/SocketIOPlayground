@@ -34,6 +34,11 @@ import Logo from '~/components/Logo.vue'
 export default {
   components: {
     Logo
+  },
+  mounted () {
+    const test = 'a'
+
+    console.log(test)
   }
 }
 </script>
