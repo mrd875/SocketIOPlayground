@@ -12,9 +12,13 @@
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore ."
   },
   "dependencies": {
+    "consola": "^2.12.1",
     "cross-env": "^5.2.1",
+    "cytoscape": "^3.15.0",
     "express": "^4.16.4",
-    "nuxt": "^2.0.0"
+    "konva": "^6.0.0",
+    "nuxt": "^2.0.0",
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {
     "nodemon": "^1.18.9",
