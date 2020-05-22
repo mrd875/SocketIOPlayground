@@ -1,3 +1,4 @@
+/* eslint-disable require-await */
 import io from 'socket.io-client'
 import EventEmitter from './EventEmitter'
 
@@ -154,10 +155,6 @@ class GT extends EventEmitter {
 
         this.id = undefined
       })
-
-      socket.on('connect_error', (error) => {
-        this.emit('connect_error', error)
-      })
     }
 
     /**
@@ -168,17 +165,31 @@ class GT extends EventEmitter {
     }
 
     /**
-     * Connects to the server and joins a room.
+     * @async
+     * Connects to the server and joins a room, returns when we connect successfully.
+     * @throws Error when cannot connect for some reason.
      * @param {String} room The roomname we want to join.
-     * @param {Object} userPayload An optional inital state we have as a user.
+     * @param {Object} userPayload An optional initial state we have as a user.
      */
     connect (room, userPayload) {
-      if (this.isConnected()) { return }
+      return new Promise((resolve, reject) => {
+        if (this.isConnected()) { reject(new Error('We are already connected.')) }
 
-      this.socket.connect()
+        this.socket.connect()
 
-      this.socket.once('connect', () => {
-        this.socket.emit('join_room', room, userPayload)
+        const throwErr = (err) => {
+          this.socket.off('connect', connect)
+          reject(err)
+        }
+        this.socket.once('connect_error', throwErr)
+
+        const connect = () => {
+          this.socket.off('connect_error', throwErr)
+          this.socket.emit('join_room', room, userPayload)
+
+          resolve(this)
+        }
+        this.socket.once('connect', connect)
       })
     }
 
@@ -186,9 +197,11 @@ class GT extends EventEmitter {
      * Disconnects from the server.
      */
     disconnect () {
-      if (!this.isConnected()) { return }
+      if (!this.isConnected()) { return this }
 
       this.socket.disconnect()
+
+      return this
     }
 
     /**
@@ -197,6 +210,7 @@ class GT extends EventEmitter {
      */
     updateStateReliable (payloadDelta) {
       this.socket.emit('state_updated_reliable', payloadDelta)
+      return this
     }
 
     /**
@@ -205,6 +219,7 @@ class GT extends EventEmitter {
      */
     updateStateUnreliable (payloadDelta) {
       this.socket.emit('state_updated_unreliable', payloadDelta)
+      return this
     }
 
     /**
@@ -213,6 +228,7 @@ class GT extends EventEmitter {
      */
     updateUserReliable (payloadDelta) {
       this.socket.emit('user_updated_reliable', payloadDelta)
+      return this
     }
 
     /**
@@ -221,6 +237,7 @@ class GT extends EventEmitter {
      */
     updateUserUnreliable (payloadDelta) {
       this.socket.emit('user_updated_unreliable', payloadDelta)
+      return this
     }
 }
 

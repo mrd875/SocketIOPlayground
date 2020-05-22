@@ -9,6 +9,8 @@ class EventEmitter {
   on (event, cb) {
     if (!this.__callbacks[event]) { this.__callbacks[event] = [] }
     this.__callbacks[event].push(cb)
+
+    return this
   }
 
   once (event, cb) {
@@ -18,25 +20,31 @@ class EventEmitter {
     }
 
     this.on(event, thiscb)
+
+    return this
   }
 
   emit (event, ...args) {
-    if (!this.__callbacks[event]) { return }
+    if (!this.__callbacks[event]) { return this }
 
     const cbs = [...this.__callbacks[event]]
     if (cbs) {
       cbs.forEach(cb => cb(...args))
     }
+
+    return this
   }
 
   off (event, cb) {
-    if (!this.__callbacks[event]) { return }
+    if (!this.__callbacks[event]) { return this }
 
     if (!cb) {
       delete this.__callbacks[event]
     } else {
       this.__callbacks[event].splice(this.__callbacks[event].indexOf(cb), 1)
     }
+
+    return this
   }
 }
 
