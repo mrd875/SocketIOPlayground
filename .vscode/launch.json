@@ -4,7 +4,7 @@
       {
         "type": "chrome",
         "request": "launch",
-        "name": "client: chrome",
+        "name": "client launch: chrome",
         "url": "http://localhost:3000",
         "webRoot": "${workspaceFolder}",
         "sourceMapPathOverrides": {
@@ -12,9 +12,20 @@
         }
       },
       {
+        "type": "chrome",
+        "request": "attach",
+        "name": "client attach: chrome",
+        "urlFilter": "http://localhost:3000*",
+        "webRoot": "${workspaceFolder}",
+        "sourceMapPathOverrides": {
+          "webpack:///*": "${workspaceRoot}/*"
+        },
+        "port": 9222
+      },
+      {
         "type": "node",
         "request": "launch",
-        "name": "server: nuxt",
+        "name": "server launch: nuxt",
         "runtimeExecutable": "npm",
         "windows": {
           "runtimeExecutable": "npm.cmd"
@@ -24,12 +35,12 @@
           "dev"
         ],
         "port": 9229
-      }
-    ],
-    "compounds": [
+      },
       {
-        "name": "fullstack: nuxt",
-        "configurations": ["server: nuxt", "client: chrome"]
+        "type": "node",
+        "request": "attach",
+        "name": "server attach: nuxt",
+        "port": 9229
       }
     ]
   }
