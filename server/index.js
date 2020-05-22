@@ -1,7 +1,15 @@
+const http = require('http')
+
 const express = require('express')
 const consola = require('consola')
 const { Nuxt, Builder } = require('nuxt')
+
+const socketio = require('socket.io')
+const _ = require('lodash')
+
 const app = express()
+const server = http.createServer(app)
+const io = socketio(server)
 
 // Import and Set Nuxt.js options
 const config = require('../nuxt.config.js')
@@ -24,10 +32,9 @@ async function start () {
   app.use(nuxt.render)
 
   // Listen the server
-  app.listen(port, host)
-  consola.ready({
+  server.listen(port, host, () => consola.ready({
     message: `Server listening on http://${host}:${port}`,
     badge: true
-  })
+  }))
 }
 start()
