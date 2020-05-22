@@ -4,28 +4,24 @@
 
 <script>
 /* eslint-disable no-unused-vars */
+/* eslint-disable eqeqeq */
 import cytoscape from 'cytoscape'
 import consola from 'consola'
+import _ from 'lodash'
 import GT from '~/utils/GT'
 
 export default {
+  data () {
+    return {
+      minNodes: 5,
+      maxNodes: 20,
+      edgeChance: 10
+    }
+  },
   mounted () {
     const gt = new GT()
     const cy = cytoscape({
-
       container: document.getElementById('cy'), // container to render in
-
-      elements: [ // list of graph elements to start with
-        { // node a
-          data: { id: 'a' }
-        },
-        { // node b
-          data: { id: 'b' }
-        },
-        { // edge ab
-          data: { id: 'ab', source: 'a', target: 'b' }
-        }
-      ],
 
       style: [ // the stylesheet for the graph
         {
@@ -47,36 +43,50 @@ export default {
           }
         }
       ],
-
       layout: {
         name: 'grid',
         rows: 1
       }
-
     })
 
-    const eles = cy.add([
-      { group: 'nodes', data: { id: 'n0' }, position: { x: 0, y: 0 } },
-      { group: 'nodes', data: { id: 'n1' }, position: { x: 0, y: 0 } },
-      { group: 'edges', data: { id: 'e0', source: 'n0', target: 'n1' } }
-    ])
+    gt.on('init_state', (state, users, room) => {
+      if (_.isEmpty(state)) {
+        consola.log('state is empty, lets populate with randomness')
 
-    cy.add({ group: 'nodes', data: { id: 'n3', weight: 1 }, position: { x: 0, y: 0 } })
-    cy.add({ group: 'nodes', data: { id: 'n4', weight: 51 }, position: { x: 0, y: 0 } })
+        const numOfNodes = Math.floor(this.minNodes + Math.random() * this.maxNodes)
 
-    cy.remove('node[weight > 50]') // remove nodes with weight greater than 50
+        for (let i = 0; i < numOfNodes; i++) {
+          cy.add(cy.add({ group: 'nodes', data: { id: `n${i}` } }))
+        }
 
-    cy.nodes().on('click', e => consola.log('clicked', e))
-    // cy.nodes().on('position', e => consola.log('position ', e))
-    cy.nodes().position({ x: 0, y: 0 })
+        cy.nodes().forEach((e) => {
+          cy.nodes().forEach((i) => {
+            // if (e === i) { return }
 
-    const layout = cy.layout({ name: 'cose' })
+            if (Math.random() * 100 > this.edgeChance) { return }
 
-    layout.run()
+            cy.add(cy.add({ group: 'edges', data: { id: `e${e.id()}-${i.id()}`, source: e.id(), target: i.id() } }))
+          })
+        })
 
-    consola.log(cy.elements().jsons())
+        cy.layout({
+          name: 'random'
+        }).run()
 
+        // ok generated the random network.
+        // push to server as starter state.
+        gt.updateStateReliable({ elements: cy.elements().jsons() })
+      } else {
+        // lets init our network to be consistent with the incoming payload.
+        const elements = Object.values(state.elements)
+        elements.forEach((e) => {
+          cy.add(e)
+        })
+      }
+    })
     gt.connect('gt')
+  },
+  methods: {
   }
 }
 </script>
