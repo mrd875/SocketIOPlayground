@@ -13,7 +13,6 @@
 </template>
 
 <script>
-/* eslint-disable no-unused-vars */
 import consola from 'consola'
 import Konva from 'konva'
 import GT from '~/utils/GT'
