@@ -205,7 +205,7 @@ export default {
 
           // if we do not have this element, we need to add it.
           if (!cyEle.length) {
-            cy.add(ele)
+            if (ele !== null) { cy.add(ele) }
             continue
           }
 
