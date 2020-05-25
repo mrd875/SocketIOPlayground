@@ -52,11 +52,52 @@ export default {
 
     gt.connect('gt')
     await this.waitForInit(gt, cy)
+    /*
+      The state is setup as:
+      {
+        nodes: {
+          [node.data.id]: {NODEDATA}
+        },
+        edges: {
+          [edge.data.id]: {EDGEDATA}
+        }
+      }
+    */
 
     consola.log('Initialized, setup events...')
 
-    cy.nodes().on('position', () => consola.log('a'))
-    consola.log(cy.nodes())
+    cy.nodes().on('position', (e) => {
+      if (e.target.noEvent) {
+        e.target.noEvent = undefined
+        return
+      }
+
+      const node = e.target.json()
+
+      // tell server about the updated node
+      gt.updateStateUnreliable({
+        nodes: {
+          [node.data.id]: node
+        }
+      })
+    })
+
+    gt.on('state_updated_unreliable', (id, payloadDelta) => {
+      if (id === gt.id) { return }
+
+      // received a updated node, lets update it.
+      if (payloadDelta.nodes) {
+        for (const id in payloadDelta.nodes) {
+          const node = payloadDelta.nodes[id]
+          const cyNode = cy.getElementById(id)
+
+          if (!cyNode) { continue }
+
+          cyNode.position(node.position)
+          cyNode.noEvent = true
+        }
+      }
+    })
   },
   methods: {
     waitForInit (gt, cy) {
@@ -87,13 +128,30 @@ export default {
 
             // ok generated the random network.
             // push to server as starter state.
-            gt.updateStateReliable({ elements: cy.elements().jsons() })
+
+            const networkState = {
+              nodes: {},
+              edges: {}
+            }
+            const nodes = cy.nodes().jsons()
+            const edges = cy.edges().jsons()
+
+            nodes.forEach((n) => {
+              networkState.nodes[n.data.id] = n
+            })
+            edges.forEach((e) => {
+              networkState.edges[e.data.id] = e
+            })
+
+            gt.updateStateReliable({ nodes: networkState.nodes, edges: networkState.edges })
           } else {
             // lets init our network to be consistent with the incoming payload.
-            const elements = Object.values(state.elements)
-            elements.forEach((e) => {
-              cy.add(e)
-            })
+            for (const id in state.nodes) {
+              cy.add(state.nodes[id])
+            }
+            for (const id in state.edges) {
+              cy.add(state.edges[id])
+            }
           }
 
           resolve()
