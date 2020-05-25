@@ -45,7 +45,7 @@ const getUsersFromRoom = (room) => {
 
 // all the states for each room.
 // key'd by room name, value being the room's state.
-const rooms = {}
+let rooms = {}
 
 // debug http endpoints to view the state.
 app.get('/rooms', (req, res) => {
@@ -56,6 +56,10 @@ app.get('/room', (req, res) => {
 })
 app.get('/room/:id', (req, res) => {
   res.json(getUsersFromRoom(req.params.id))
+})
+app.get('/clear', (req, res) => {
+  rooms = {}
+  res.sendStatus(200)
 })
 
 // listen for a connection.

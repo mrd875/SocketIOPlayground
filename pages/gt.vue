@@ -67,43 +67,63 @@ export default {
 
     consola.log('Initialized, setup events...')
 
-    cy.nodes().on('drag', (e) => {
+    cy.on('drag', (e) => {
       const node = e.target.json()
 
       // tell server about the updated node
       gt.updateStateUnreliable({
-        nodes: {
+        elements: {
           [node.data.id]: node
         }
       })
     })
 
-    gt.on('state_updated_unreliable', (id, payloadDelta) => {
-      if (id === gt.id) { return }
-
+    const checkElementsUpdates = (payloadDelta) => {
       // received a updated node, lets update it.
-      if (payloadDelta.nodes) {
-        for (const id in payloadDelta.nodes) {
-          const node = payloadDelta.nodes[id]
-          const cyNode = cy.getElementById(id)
+      if (payloadDelta.elements) {
+        for (const id in payloadDelta.elements) {
+          const ele = payloadDelta.elements[id]
+          const cyEle = cy.getElementById(id)
 
-          if (!cyNode) { continue }
+          if (!cyEle.length) {
+            cy.add(ele)
+            continue
+          }
 
-          cyNode.stop()
-          cyNode.animate({
-            position: node.position
+          if (ele === null) {
+            cyEle.remove()
+            continue
+          }
+
+          cyEle.stop()
+          cyEle.animate({
+            ...ele
           }, {
             duration: this.animateRate
           })
         }
+      } else if (payloadDelta.elements === null) {
+        cy.elements().remove()
       }
+    }
+
+    gt.on('state_updated_reliable', (id, payloadDelta) => {
+      if (id === gt.id) { return }
+
+      checkElementsUpdates(payloadDelta)
+    })
+
+    gt.on('state_updated_unreliable', (id, payloadDelta) => {
+      if (id === gt.id) { return }
+
+      checkElementsUpdates(payloadDelta)
     })
   },
   methods: {
     waitForInit (gt, cy) {
       return new Promise((resolve, reject) => {
         gt.on('init_state', (state, users, room) => {
-          if (_.isEmpty(state)) {
+          if (!('elements' in state)) {
             consola.log('state is empty, lets populate with randomness')
 
             const numOfNodes = Math.floor(this.minNodes + Math.random() * this.maxNodes)
@@ -130,27 +150,20 @@ export default {
             // push to server as starter state.
 
             const networkState = {
-              nodes: {},
-              edges: {}
+              elements: {}
             }
-            const nodes = cy.nodes().jsons()
-            const edges = cy.edges().jsons()
+            const elements = cy.elements().jsons()
 
-            nodes.forEach((n) => {
-              networkState.nodes[n.data.id] = n
-            })
-            edges.forEach((e) => {
-              networkState.edges[e.data.id] = e
+            elements.forEach((e) => {
+              networkState.elements[e.data.id] = e
             })
 
-            gt.updateStateReliable({ nodes: networkState.nodes, edges: networkState.edges })
+            gt.updateStateReliable({ elements: null })
+            gt.updateStateReliable({ elements: networkState.elements })
           } else {
             // lets init our network to be consistent with the incoming payload.
-            for (const id in state.nodes) {
-              cy.add(state.nodes[id])
-            }
-            for (const id in state.edges) {
-              cy.add(state.edges[id])
+            for (const id in state.elements) {
+              cy.add(state.elements[id])
             }
           }
 
