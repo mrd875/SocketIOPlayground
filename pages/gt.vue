@@ -1,5 +1,7 @@
 <template>
-  <div id="cy" />
+  <div>
+    <div id="cy" />
+  </div>
 </template>
 
 <script>
@@ -7,6 +9,8 @@
 /* eslint-disable eqeqeq */
 /* eslint-disable require-await */
 import cytoscape from 'cytoscape'
+import edgehandles from 'cytoscape-edgehandles'
+import cxtmenu from 'cytoscape-cxtmenu'
 import consola from 'consola'
 import _ from 'lodash'
 import GT from '~/utils/GT'
@@ -21,6 +25,9 @@ export default {
     }
   },
   async mounted () {
+    cytoscape.use(edgehandles)
+    cytoscape.use(cxtmenu)
+
     const gt = new GT()
     const cy = cytoscape({
       container: document.getElementById('cy'), // container to render in
@@ -49,6 +56,35 @@ export default {
         name: 'grid',
         rows: 1
       }
+    })
+    const eh = cy.edgehandles({})
+
+    const nodemenu = cy.cxtmenu({
+      menuRadius: 100, // the radius of the circular menu in pixels
+      selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
+      commands: [ // an array of commands to list in the menu or a function that returns the array
+        { // example command
+          fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+          content: 'a command name', // html/text content to be displayed in the menu
+          select (ele) { // a function to execute when the command is selected
+            consola.log(ele.id()) // `ele` holds the reference to the active element
+          }
+        }
+      ]
+    })
+
+    const edgemenu = cy.cxtmenu({
+      menuRadius: 100, // the radius of the circular menu in pixels
+      selector: 'edge', // elements matching this Cytoscape.js selector will trigger cxtmenus
+      commands: [ // an array of commands to list in the menu or a function that returns the array
+        { // example command
+          fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
+          content: 'Delete', // html/text content to be displayed in the menu
+          select (ele) { // a function to execute when the command is selected
+            consola.log(ele.id()) // `ele` holds the reference to the active element
+          }
+        }
+      ]
     })
 
     gt.connect('gt')
@@ -177,8 +213,8 @@ export default {
 
 <style>
 #cy {
-  width: 300px;
-  height: 300px;
+  width: 100%;
+  height: 80vh;
   display: block;
 }
 </style>
