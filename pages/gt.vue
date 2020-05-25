@@ -16,7 +16,8 @@ export default {
     return {
       minNodes: 5,
       maxNodes: 20,
-      edgeChance: 10
+      edgeChance: 10,
+      animateRate: 50
     }
   },
   async mounted () {
@@ -66,12 +67,7 @@ export default {
 
     consola.log('Initialized, setup events...')
 
-    cy.nodes().on('position', (e) => {
-      if (e.target.noEvent) {
-        e.target.noEvent = undefined
-        return
-      }
-
+    cy.nodes().on('drag', (e) => {
       const node = e.target.json()
 
       // tell server about the updated node
@@ -93,8 +89,12 @@ export default {
 
           if (!cyNode) { continue }
 
-          cyNode.position(node.position)
-          cyNode.noEvent = true
+          cyNode.stop()
+          cyNode.animate({
+            position: node.position
+          }, {
+            duration: this.animateRate
+          })
         }
       }
     })
