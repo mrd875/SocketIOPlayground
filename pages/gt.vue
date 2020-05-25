@@ -34,31 +34,76 @@ export default {
 
       style: [ // the stylesheet for the graph
         {
-          selector: 'node',
+          selector: 'node[name]',
           style: {
-            'background-color': '#666',
-            label: 'data(id)'
+            content: 'data(name)'
           }
         },
 
         {
           selector: 'edge',
           style: {
-            width: 3,
-            'line-color': '#ccc',
-            'target-arrow-color': '#ccc',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier'
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle'
+          }
+        },
+        // some style for the extension
+        {
+          selector: '.eh-handle',
+          style: {
+            'background-color': 'red',
+            width: 12,
+            height: 12,
+            shape: 'ellipse',
+            'overlay-opacity': 0,
+            'border-width': 12, // makes the handle easier to hit
+            'border-opacity': 0
+          }
+        },
+
+        {
+          selector: '.eh-hover',
+          style: {
+            'background-color': 'red'
+          }
+        },
+
+        {
+          selector: '.eh-source',
+          style: {
+            'border-width': 2,
+            'border-color': 'red'
+          }
+        },
+
+        {
+          selector: '.eh-target',
+          style: {
+            'border-width': 2,
+            'border-color': 'red'
+          }
+        },
+
+        {
+          selector: '.eh-preview, .eh-ghost-edge',
+          style: {
+            'background-color': 'red',
+            'line-color': 'red',
+            'target-arrow-color': 'red',
+            'source-arrow-color': 'red'
+          }
+        },
+        {
+          selector: '.eh-ghost-edge.eh-preview-active',
+          style: {
+            opacity: 0
           }
         }
-      ],
-      layout: {
-        name: 'grid',
-        rows: 1
-      }
+      ]
     })
-    const eh = cy.edgehandles({})
 
+    const eh = cy.edgehandles({})
+    /*
     const nodemenu = cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
@@ -85,32 +130,26 @@ export default {
           }
         }
       ]
-    })
+    }) */
 
     gt.connect('gt')
     await this.waitForInit(gt, cy)
-    /*
-      The state is setup as:
-      {
-        nodes: {
-          [node.data.id]: {NODEDATA}
-        },
-        edges: {
-          [edge.data.id]: {EDGEDATA}
-        }
-      }
-    */
 
     consola.log('Initialized, setup events...')
 
-    cy.on('drag', (e) => {
-      const node = e.target.json()
+    cy.on('ehcomplete', (event, sourceNode, targetNode, addedEles) => {
+      consola.log('ehcomplete', addedEles)
 
-      // tell server about the updated node
+      gt.updateStateReliable({
+        elements: this.cyJsonsToStateObj(addedEles.jsons())
+      })
+    })
+
+    cy.on('drag', (e) => {
+      consola.log('drag', e.target)
+
       gt.updateStateUnreliable({
-        elements: {
-          [node.data.id]: node
-        }
+        elements: this.cyJsonsToStateObj(e.target.jsons())
       })
     })
 
@@ -184,18 +223,8 @@ export default {
 
             // ok generated the random network.
             // push to server as starter state.
-
-            const networkState = {
-              elements: {}
-            }
-            const elements = cy.elements().jsons()
-
-            elements.forEach((e) => {
-              networkState.elements[e.data.id] = e
-            })
-
             gt.updateStateReliable({ elements: null })
-            gt.updateStateReliable({ elements: networkState.elements })
+            gt.updateStateReliable({ elements: this.cyJsonsToStateObj(cy.elements().jsons()) })
           } else {
             // lets init our network to be consistent with the incoming payload.
             for (const id in state.elements) {
@@ -206,6 +235,16 @@ export default {
           resolve()
         })
       })
+    },
+    // converts the cytoscape's json format into my GT state format.
+    cyJsonsToStateObj (jsons) {
+      const answer = {}
+
+      jsons.forEach((e) => {
+        answer[e.data.id] = e
+      })
+
+      return answer
     }
   }
 }
