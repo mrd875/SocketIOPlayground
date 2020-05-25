@@ -17,7 +17,7 @@ export default {
       minNodes: 5,
       maxNodes: 20,
       edgeChance: 10,
-      animateRate: 50
+      animateRate: 50 // amount in milliseconds, should match server's tick rate
     }
   },
   async mounted () {
