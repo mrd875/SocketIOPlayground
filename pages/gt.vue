@@ -116,7 +116,7 @@ export default {
           }
         }
       ]
-    })
+    }) */
 
     const edgemenu = cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
@@ -126,11 +126,17 @@ export default {
           fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
           content: 'Delete', // html/text content to be displayed in the menu
           select (ele) { // a function to execute when the command is selected
-            consola.log(ele.id()) // `ele` holds the reference to the active element
+            ele.remove()
+
+            gt.updateStateReliable({
+              elements: {
+                [ele.id()]: null
+              }
+            })
           }
         }
       ]
-    }) */
+    })
 
     gt.connect('gt')
     await this.waitForInit(gt, cy)
