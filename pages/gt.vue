@@ -6,8 +6,6 @@
 
 <script>
 /* eslint-disable no-unused-vars */
-/* eslint-disable eqeqeq */
-/* eslint-disable require-await */
 import cytoscape from 'cytoscape'
 import edgehandles from 'cytoscape-edgehandles'
 import cxtmenu from 'cytoscape-cxtmenu'
@@ -18,16 +16,19 @@ import GT from '~/utils/GT'
 export default {
   data () {
     return {
-      minNodes: 5,
-      maxNodes: 20,
+      minNodes: 5, // when the state is empty, we generate a random graph
+      maxNodes: 20, // with these parameters.
       edgeChance: 10,
+
       animateRate: 50 // amount in milliseconds, should match server's tick rate
     }
   },
   async mounted () {
+    // we are using some cytoscape plugins.
     cytoscape.use(edgehandles)
     cytoscape.use(cxtmenu)
 
+    // create the objects we need.
     const gt = new GT()
     const cy = cytoscape({
       container: document.getElementById('cy'), // container to render in
@@ -102,6 +103,7 @@ export default {
       ]
     })
 
+    // setup the cytoscape plugins
     const eh = cy.edgehandles({})
 
     const coremenu = cy.cxtmenu({
@@ -125,13 +127,13 @@ export default {
     })
 
     const nodemenu = cy.cxtmenu({
-      menuRadius: 100, // the radius of the circular menu in pixels
-      selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
-      commands: [ // an array of commands to list in the menu or a function that returns the array
-        { // example command
-          fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
-          content: 'Delete node', // html/text content to be displayed in the menu
-          select (ele) { // a function to execute when the command is selected
+      menuRadius: 100,
+      selector: 'node',
+      commands: [
+        {
+          fillColor: 'rgba(255, 55, 25, 0.75)',
+          content: 'Delete node',
+          select (ele) {
             ele.remove()
 
             gt.updateStateReliable({
@@ -145,13 +147,13 @@ export default {
     })
 
     const edgemenu = cy.cxtmenu({
-      menuRadius: 100, // the radius of the circular menu in pixels
-      selector: 'edge', // elements matching this Cytoscape.js selector will trigger cxtmenus
-      commands: [ // an array of commands to list in the menu or a function that returns the array
-        { // example command
-          fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
+      menuRadius: 100,
+      selector: 'edge',
+      commands: [
+        {
+          fillColor: 'rgba(255, 55, 25, 0.75)',
           content: 'Delete edge', // html/text content to be displayed in the menu
-          select (ele) { // a function to execute when the command is selected
+          select (ele) {
             ele.remove()
 
             gt.updateStateReliable({
@@ -164,11 +166,14 @@ export default {
       ]
     })
 
+    // let us connect to the server and wait for the inital payload.
     gt.connect('gt')
     await this.waitForInit(gt, cy)
 
+    // we got the payload, lets setup the events...
     consola.log('Initialized, setup events...')
 
+    // fired when the user finished creating an edge.
     cy.on('ehcomplete', (event, sourceNode, targetNode, addedEles) => {
       consola.log('ehcomplete', addedEles)
 
@@ -177,6 +182,7 @@ export default {
       })
     })
 
+    // fired when an element is being dragged
     cy.on('drag', (e) => {
       consola.log('drag', e.target)
 
@@ -189,23 +195,27 @@ export default {
       })
     })
 
+    // basically all the server commands are handled here in respect to the cyto elements.
     const checkElementsUpdates = (payloadDelta) => {
-      // received a updated node, lets update it.
+      // received elements, lets update it.
       if (payloadDelta.elements) {
         for (const id in payloadDelta.elements) {
           const ele = payloadDelta.elements[id]
           const cyEle = cy.getElementById(id)
 
+          // if we do not have this element, we need to add it.
           if (!cyEle.length) {
             cy.add(ele)
             continue
           }
 
+          // we must remove this element
           if (ele === null) {
             cyEle.remove()
             continue
           }
 
+          // lets tween to the new state of the element.
           cyEle.stop()
           cyEle.animate({
             ...ele
@@ -213,17 +223,18 @@ export default {
             duration: this.animateRate
           })
         }
+      // we must remove all elements.
       } else if (payloadDelta.elements === null) {
         cy.elements().remove()
       }
     }
 
+    // listen for server commands and handle them as they come in.
     gt.on('state_updated_reliable', (id, payloadDelta) => {
       if (id === gt.id) { return }
 
       checkElementsUpdates(payloadDelta)
     })
-
     gt.on('state_updated_unreliable', (id, payloadDelta) => {
       if (id === gt.id) { return }
 
@@ -231,18 +242,20 @@ export default {
     })
   },
   methods: {
+    // we wait for the inital payload when we first connect to the server.
     waitForInit (gt, cy) {
       return new Promise((resolve, reject) => {
         gt.on('init_state', (state, users, room) => {
           if (!('elements' in state)) {
             consola.log('state is empty, lets populate with randomness')
 
-            const numOfNodes = Math.floor(this.minNodes + Math.random() * this.maxNodes)
-
+            // generate the nodes.
+            const numOfNodes = Math.floor(this.minNodes + Math.random() * (this.maxNodes - this.minNodes))
             for (let i = 0; i < numOfNodes; i++) {
               cy.add(cy.add({ group: 'nodes' }))
             }
 
+            // generate the edges between all the nodes
             cy.nodes().forEach((e) => {
               cy.nodes().forEach((i) => {
                 // if (e === i) { return }
@@ -253,19 +266,22 @@ export default {
               })
             })
 
+            // layout the nodes in random
             cy.layout({
               name: 'random'
             }).run()
 
-            // ok generated the random network.
+            // ok generated the random graph
             // push to server as starter state.
             gt.updateStateReliable({ elements: null })
             gt.updateStateReliable({ elements: this.cyJsonsToStateObj(cy.elements().jsons()) })
           } else {
-            // lets init our network to be consistent with the incoming payload.
+            // lets init our graph to be consistent with the incoming payload.
             for (const id in state.elements) {
               try {
                 cy.add(state.elements[id])
+                // its possible that a left over edge is in the state from a deleted node,
+                // so we catch the error, and continue on.
               } catch (e) {
                 consola.warn(e)
               }
@@ -280,6 +296,16 @@ export default {
     cyJsonsToStateObj (jsons) {
       const answer = {}
 
+      // the server state is:
+      /*
+        {
+          elements: {
+            [element.id()]: element.json()
+          }
+        }
+      */
+      // but we pass this function a cyto .jsons(), which just calls .json on all the elements in the collection
+      // and we loop over all of them.
       jsons.forEach((e) => {
         answer[e.data.id] = e
       })
