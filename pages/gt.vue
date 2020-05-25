@@ -103,20 +103,46 @@ export default {
     })
 
     const eh = cy.edgehandles({})
-    /*
+
+    const coremenu = cy.cxtmenu({
+      menuRadius: 100, // the radius of the circular menu in pixels
+      selector: 'core', // elements matching this Cytoscape.js selector will trigger cxtmenus
+      commands: [ // an array of commands to list in the menu or a function that returns the array
+        { // example command
+          fillColor: 'rgba(55, 255, 25, 0.75)', // optional: custom background color for item
+          content: 'Add a node', // html/text content to be displayed in the menu
+          select (ele, e) {
+            const node = cy.add(cy.add({ group: 'nodes', position: e.position }))
+
+            gt.updateStateReliable({
+              elements: {
+                [node.id()]: node.json()
+              }
+            })
+          }
+        }
+      ]
+    })
+
     const nodemenu = cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
       commands: [ // an array of commands to list in the menu or a function that returns the array
         { // example command
-          fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-          content: 'a command name', // html/text content to be displayed in the menu
+          fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
+          content: 'Delete node', // html/text content to be displayed in the menu
           select (ele) { // a function to execute when the command is selected
-            consola.log(ele.id()) // `ele` holds the reference to the active element
+            ele.remove()
+
+            gt.updateStateReliable({
+              elements: {
+                [ele.id()]: null
+              }
+            })
           }
         }
       ]
-    }) */
+    })
 
     const edgemenu = cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
@@ -124,7 +150,7 @@ export default {
       commands: [ // an array of commands to list in the menu or a function that returns the array
         { // example command
           fillColor: 'rgba(255, 55, 25, 0.75)', // optional: custom background color for item
-          content: 'Delete', // html/text content to be displayed in the menu
+          content: 'Delete edge', // html/text content to be displayed in the menu
           select (ele) { // a function to execute when the command is selected
             ele.remove()
 
@@ -155,7 +181,11 @@ export default {
       consola.log('drag', e.target)
 
       gt.updateStateUnreliable({
-        elements: this.cyJsonsToStateObj(e.target.jsons())
+        elements: {
+          [e.target.id()]: {
+            position: e.target.position()
+          }
+        }
       })
     })
 
@@ -210,7 +240,7 @@ export default {
             const numOfNodes = Math.floor(this.minNodes + Math.random() * this.maxNodes)
 
             for (let i = 0; i < numOfNodes; i++) {
-              cy.add(cy.add({ group: 'nodes', data: { id: `n${i}` } }))
+              cy.add(cy.add({ group: 'nodes' }))
             }
 
             cy.nodes().forEach((e) => {
@@ -219,7 +249,7 @@ export default {
 
                 if (Math.random() * 100 > this.edgeChance) { return }
 
-                cy.add(cy.add({ group: 'edges', data: { id: `e${e.id()}-${i.id()}`, source: e.id(), target: i.id() } }))
+                cy.add(cy.add({ group: 'edges', data: { source: e.id(), target: i.id() } }))
               })
             })
 
@@ -234,7 +264,11 @@ export default {
           } else {
             // lets init our network to be consistent with the incoming payload.
             for (const id in state.elements) {
-              cy.add(state.elements[id])
+              try {
+                cy.add(state.elements[id])
+              } catch (e) {
+                consola.warn(e)
+              }
             }
           }
 
