@@ -6,11 +6,9 @@
 
 <script>
 /* eslint-disable no-unused-vars */
-import cytoscape from 'cytoscape'
-import edgehandles from 'cytoscape-edgehandles'
-import cxtmenu from 'cytoscape-cxtmenu'
-import consola from 'consola'
 import _ from 'lodash'
+import cytoscape from '~/utils/Cytoscape'
+import consola from '~/utils/Consola'
 import GT from '~/utils/GT'
 
 export default {
@@ -24,10 +22,6 @@ export default {
     }
   },
   async mounted () {
-    // we are using some cytoscape plugins.
-    cytoscape.use(edgehandles)
-    cytoscape.use(cxtmenu)
-
     // create the objects we need.
     const gt = new GT()
     const cy = cytoscape({
