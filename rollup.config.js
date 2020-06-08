@@ -37,7 +37,7 @@ export default [
     output: {
       file: pkg.browser,
       format: 'umd',
-      name: 'eatFruit'
+      name: pkg.umdName
     },
     plugins: [
       resolve(),
@@ -52,7 +52,7 @@ export default [
     output: {
       file: pkg.browser.replace(/\.js$/, '.min.js'),
       format: 'umd',
-      name: 'eatFruit'
+      name: pkg.umdName
     },
     plugins: [
       resolve(),

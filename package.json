@@ -2,9 +2,10 @@
   "name": "GroupwareToolkitClient",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/eat-fruit.cjs.js",
-  "browser": "dist/eat-fruit.umd.js",
-  "module": "dist/eat-fruit.es.js",
+  "main": "dist/gt.cjs.js",
+  "browser": "dist/gt.umd.js",
+  "module": "dist/gt.es.js",
+  "umdName": "GT",
   "engines": {
     "node": ">= 6"
   },
