@@ -1,7 +1,8 @@
 module.exports = {
   env: {
     commonjs: true,
-    es6: true
+    es6: true,
+    mocha: true
   },
   extends: ['standard'],
   globals: {

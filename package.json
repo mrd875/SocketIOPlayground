@@ -14,7 +14,7 @@
     "format": "eslint --fix --ext .js --ignore-path .gitignore .",
     "build": "rollup -c",
     "prepublishOnly": "npm run build",
-    "test": "exit 0"
+    "test": "mocha || true"
   },
   "repository": {
     "type": "git",
@@ -35,12 +35,14 @@
   "devDependencies": {
     "@babel/core": "^7.10.2",
     "@babel/preset-env": "^7.10.2",
+    "chai": "^4.2.0",
     "eslint": "^7.1.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "mocha": "^8.0.1",
     "rollup": "^2.13.1",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-commonjs": "^10.1.0",
