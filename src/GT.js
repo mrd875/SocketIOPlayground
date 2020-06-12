@@ -1,6 +1,6 @@
 /* eslint-disable require-await */
-import io from 'socket.io-client/dist/socket.io'
-import EventEmitter from './EventEmitter'
+const EventEmitter = require('./EventEmitter')
+const io = require('socket.io-client/dist/socket.io')
 
 /**
  * Fired when the server sends us the entire state of the room.
@@ -238,4 +238,4 @@ class GT extends EventEmitter {
   }
 }
 
-export default GT
+module.exports = GT
