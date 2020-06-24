@@ -12,23 +12,19 @@ const _ = require('lodash')
  */
 
  /**
- * Fired when the server sends us the entire state of the room.
- * Happens when we just join a room.
+ * Fires when we just joined a room.
  *
  * @event GT#joined
+ * @param {String} room the name of the room
  * @param {Object} state The state of the room.
  * @param {Object} users All the users and their states. Key'd by user id, value being the state of the user.
- * @param {String} room the name of the room
  */
 
 /**
- * Fired when the server sends us the entire state of the room.
- * Happens when we just join a room.
+ * Fires when we left a room for any reason.
  *
  * @event GT#leftroom
- * @param {Object} state The state of the room.
- * @param {Object} users All the users and their states. Key'd by user id, value being the state of the user.
- * @param {String} room the name of the room
+ * @param {String} reason The reason why we left the room.
  */
 
 /**
@@ -126,6 +122,7 @@ const _ = require('lodash')
  *
  * @property {Object} socket The internal socket we use as communication.
  * @property {String} id Our unique identifier, undefined when we are not authed.
+ * @property {String} room What room we are currently in. undefined when we are not in a room.
  */
 class GT extends EventEmitter {
   /**
