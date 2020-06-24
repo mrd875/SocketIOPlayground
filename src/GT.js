@@ -4,10 +4,28 @@ const io = require('socket.io-client/dist/socket.io')
 const _ = require('lodash')
 
 /**
+ * Fired when the server tells us we have authed.
+ *
+ * @event GT#authed
+ * @param {String} id The id we were given. (typically the id we gave the server)
+ * @param {Object} state The state of the user object that was on the server. (the state of the user before we authed)
+ */
+
+ /**
  * Fired when the server sends us the entire state of the room.
  * Happens when we just join a room.
  *
- * @event GT#init_state
+ * @event GT#joined
+ * @param {Object} state The state of the room.
+ * @param {Object} users All the users and their states. Key'd by user id, value being the state of the user.
+ * @param {String} room the name of the room
+ */
+
+/**
+ * Fired when the server sends us the entire state of the room.
+ * Happens when we just join a room.
+ *
+ * @event GT#leftroom
  * @param {Object} state The state of the room.
  * @param {Object} users All the users and their states. Key'd by user id, value being the state of the user.
  * @param {String} room the name of the room
@@ -107,7 +125,7 @@ const _ = require('lodash')
  * @emits GT#leftroom
  *
  * @property {Object} socket The internal socket we use as communication.
- * @property {String} id Our unique identifier, undefined when we are not connected to the server.
+ * @property {String} id Our unique identifier, undefined when we are not authed.
  */
 class GT extends EventEmitter {
   /**
