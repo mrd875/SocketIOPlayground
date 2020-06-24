@@ -44,9 +44,9 @@ const _ = require('lodash')
 */
 
 /**
- * Fires when we receive a connection error when trying to connect to the server.
+ * Fires when we receive an error from the server.
  *
- * @event GT#connect_error
+ * @event GT#connect
  * @param {Object} error
  */
 
