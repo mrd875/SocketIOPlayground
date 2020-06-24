@@ -109,9 +109,9 @@ const _ = require('lodash')
  */
 class GT extends EventEmitter {
   /**
-     * Returns a new GT object.
-     * @param {String} serverIp Optional ip to connect to
-     */
+   * Returns a new GT object.
+   * @param {String} serverIp Optional ip to connect to
+   */
   constructor (serverIp) {
     super()
 
@@ -151,10 +151,10 @@ class GT extends EventEmitter {
 
     // when we disconnect from the server
     socket.on('disconnect', (reason) => {
-      this.emit('disconnect', reason)
-
       this.id = undefined
       this.room = undefined
+
+      this.emit('disconnect', reason)
     })
 
     // when we join a room
@@ -186,12 +186,14 @@ class GT extends EventEmitter {
       this.emit('connect', socketId)
     })
 
-    // when we were removed form a room
+    // when we were removed from a room
     socket.on('leftroom', (reason) => {
       this.room = undefined
+
       this.emit('leftroom', reason)
     })
 
+    // the same logic as the server to remove null values from an object.
     this.removeObjectsWithNull = obj => {
       return _(obj)
         .pickBy(_.isObject) // get only objects
@@ -225,11 +227,9 @@ class GT extends EventEmitter {
 
   /**
      * @async
-     * Connects to the server and joins a room, returns when we connect successfully.
+     * Connects to the server, returns when we connect.
      * @throws Error when cannot connect for some reason.
-     * @param {String} id The id we want to assign and auth ourselves as.
-     * @param {String} room The roomname we want to join.
-     * @param {Object} userPayload An optional initial state we have as a user.
+     * @throws Error if we are already connected.
      */
   connect () {
     return new Promise((resolve, reject) => {
@@ -252,6 +252,12 @@ class GT extends EventEmitter {
     })
   }
 
+  /**
+     * @async
+     * Authenticates to the server. Returns when we authenticate.
+     * @throws Error when we cannot auth.
+     * @param {String} id The id we want to assign and auth ourselves as.
+     */
   auth (id) {
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) { reject(new Error('We need to be connected.')) }
@@ -279,6 +285,13 @@ class GT extends EventEmitter {
     })
   }
 
+  /**
+     * @async
+     * Joins a room. Returns when we have joined.
+     * @throws Error when we cannot join the room.
+     * @param {String} room The roomname we want to join.
+     * @param {Object} userPayload An optional initial state we have as a user.
+     */
   join (room, userPayload) {
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) { reject(new Error('We need to be connected.')) }
@@ -306,7 +319,9 @@ class GT extends EventEmitter {
   }
 
   /**
-     * Disconnects from the server.
+   * @async
+     * Disconnects from the server. Returns when we disconnected.
+     * @throws Error if we are not connected.
      */
   disconnect () {
     return new Promise((resolve, reject) => {
@@ -320,6 +335,11 @@ class GT extends EventEmitter {
     })
   }
 
+  /**
+   * @async
+     * Leaves the room, returns when we left the room.
+     * @throws Error if we cannot leave the room.
+     */
   leaveRoom () {
     return new Promise((resolve, reject) => {
       if (!this.isInRoom()) { reject(new Error('We need to be in a room')) }
