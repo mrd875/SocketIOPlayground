@@ -46,7 +46,7 @@ const _ = require('lodash')
 /**
  * Fires when we receive an error from the server.
  *
- * @event GT#connect
+ * @event GT#error
  * @param {Object} error
  */
 
@@ -92,7 +92,6 @@ const _ = require('lodash')
 /**
  * The GT object.
  *
- * @emits GT#init_state
  * @emits GT#connected
  * @emits GT#disconnected
  * @emits GT#user_updated_reliable
@@ -103,6 +102,9 @@ const _ = require('lodash')
  * @emits GT#disconnect
  * @emits GT#connect_error
  * @emits GT#error
+ * @emits GT#authed
+ * @emits GT#joined
+ * @emits GT#leftroom
  *
  * @property {Object} socket The internal socket we use as communication.
  * @property {String} id Our unique identifier, undefined when we are not connected to the server.
