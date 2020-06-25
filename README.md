@@ -96,6 +96,30 @@ The users is all the users and their states in the room.
   gt.on('disconnected', (id, reason) => {
     console.log(`ID ${id} has left with reason: ${reason}`)
   })
+
+
+  // these will fire when the room/user state changes.
+  gt.on('user_updated_reliable', (id, payloadDelta) => {
+    console.log(`ID ${id} has updated their state:`)
+    console.log(payloadDelta)
+    console.log('\n\n')
+
+    // handle the state change
+  })
+  gt.on('user_updated_unreliable', (id, payloadDelta) => {
+    ...
+  })
+
+  gt.on('state_updated_reliable', (id, payloadDelta) => {
+    console.log(`ID ${id} has updated the room's state:`)
+    console.log(payloadDelta)
+    console.log('\n\n')
+
+    // handle the state change
+  })
+  gt.on('state_updated_unreliable', (id, payloadDelta) => {
+    ...
+  })
 ```
 
 ## How it works
