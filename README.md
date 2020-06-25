@@ -74,6 +74,30 @@ We now try to authenticate. We could get an error, so we need to catch it.
 ```
 We joined the room 'roomName', the last argument is optional, it sets your initial user state on the server.
 
+The roomState is the current state of the room.
+
+The users is all the users and their states in the room.
+
+### Events
+```javascript
+  // fires when WE disconnect.
+  gt.on('disconnect', (reason) => {
+    console.log(`We have disconnected from the server: ${reason}`)
+  })
+
+  // fires when someone has joined the room (including ourselves).
+  gt.on('connected', (id, userState) => {
+    console.log(`ID ${id} has joined with state:`)
+    console.log(userState)
+    console.log('\n\n')
+  })
+
+  // fires when someone left the room
+  gt.on('disconnected', (id, reason) => {
+    console.log(`ID ${id} has left with reason: ${reason}`)
+  })
+```
+
 ## How it works
 
 ### Getting authed
