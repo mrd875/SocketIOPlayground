@@ -320,7 +320,7 @@ class GT extends EventEmitter {
       this.socket.once('joined', handleJoin = (room, roomState, users) => {
         this.socket.off('error', handleJoinError)
 
-        resolve(room, roomState, users)
+        resolve({room, roomState, users})
       })
       this.socket.on('error', handleJoinError = (err) => {
         if (err.type !== 'join') return
