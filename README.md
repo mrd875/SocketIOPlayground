@@ -15,27 +15,41 @@ $ npm run dev
 $ npm run build
 ```
 
-## How it works
-
-This is a socket.io server/client application. Its designed to abstract away communication of messages from a foreign source from developers.
+This is a socket.io client application. Its designed to abstract away communication of messages from a foreign source from developers.
 
 The server is completely independent of client logic and is only keeping a collective state for the users and rooms.
 
-First of all, we have a socket.io server, listening for connections. Once the server recieves a connection, its going to expect a message from the newly connected client.
+You need the server (https://github.com/mrd875/GroupwareToolkitServer).
 
-The server is going to expect a ('join_room', room_name, user_payload) message.
-The room_name being the room the user wants to join, and the user_payload being an optional starting user state.
+## How it works
 
-Then a ('connected', user_id, user_state) message will be emitted to everyone in the room.
-The user_id being the unique socket.id of the user that just joined the room, and the user_state being the state of the user.
+### Getting authed
+First of all, we have a server, listening for connections. Once the server receives a connection, its going to listen for messages from them.
 
-After, a ('init_state', room_state, user_states, room_name) will be emitted to the new client.
-room_state is the current state of the room. user_states is the state of all the users in the room, and room_name being the name of the room.
+The server will not allow the user to do anything until they are first authenticated. Currently its simply having the user send a ('auth', authObject) message to the server. This authObject needs to have a 'id' key in it, containing the ID the user wishes to have.
 
-When the user disconnects from the socket server, a ('disconnected', user_id, reason) message will be emitted to everyone in the room.
-user_id being the user's id who disconnected and the reason being a technical reason why they left.
+The server will then send back an ('auth', authObject) back to the user confirming the auth was successful.
 
+### Joining a room
+Now the authed user will need to join a room.
 
+The user needs to send a ('join', roomObject, userObj) message. The roomObject needs to contain a 'room' key in it, containing what room they want to join. The userObj is an optional override to the initial state of the joining user's state.
+
+The server will send back a ('joined', room, stateObj, usersObj) message back to the user.
+
+### In a room
+In the 'joined' message from the server will have data containing the initial base state of the room.
+
+The stateObj will contain the current state of the room at the time of joining it.
+
+The usersObj will contain all the users in the room and their states at the time of joining the room.
+
+A ('connected', user_id, user_state) message will be emitted to everyone in the room.
+The user_id being the unique id of the user that just joined the room, and the user_state being the state of the user.
+
+When the user leaves the room, a ('disconnected', user_id, reason) message will be emitted to everyone in the room.
+
+### Sending messages
 The server will now listen for two types of messages from the connected client. A user updated and state updated message.
 
 A user update message will apply a payload to the sender's state.
@@ -46,11 +60,14 @@ A reliable message will be sent, processed and replied to as fast as possible.
 An unreliable message will be sent, and for a small amount of time, any other unreliable messages will be condensed and queued until the time is up. 
 Once the time is up, it'll then be processed and replied to.
 
+
 The payloads being sent with these messages will always be deltas, the deltas will be merged into the respected states it is supposed to part of.
+
+
 If the payload contains any null value'd keys, these keys will be removed from the server's state.
 A reply will be emitted to all users within the room, containing the same delta object that the server received.
 
-
+### State handling
 
 It will be entirely up to the clients (developers) to keep track of the state and messages they receive from the server, they receive enough information from the server so that they will be able to keep track and keep a consistent application going.
 
