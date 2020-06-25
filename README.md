@@ -21,6 +21,59 @@ The server is completely independent of client logic and is only keeping a colle
 
 You need the server (https://github.com/mrd875/GroupwareToolkitServer).
 
+## Usage
+
+I'll be using async/await as the GT API is promise based. (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+
+### Create the GT object.
+```javascript
+  const gt = new GT('http://localhost:3000/')
+```
+We can pass in the address of the GT Server we are connecting to.
+
+
+### Connect to the server.
+```javascript
+  try {
+    await gt.connect()
+  } catch (e) {
+    // connection error! abort
+    console.error(e)
+    return
+  }
+```
+We now try to connect to the server. We could get an error, so we need to catch it.
+
+### Auth
+```javascript
+  try {
+    await gt.auth('ourUniqueId')
+  } catch (e) {
+    // an auth error! abort!
+    console.error(e)
+    return
+  }
+```
+We now try to authenticate. We could get an error, so we need to catch it.
+
+### Join a room
+```javascript
+  let {room, roomState, users} = await gt.join('roomName', {test: 'this argument is optional'})
+
+  console.log(`We joined room ${room}\n\n`)
+
+
+  console.log('The rooms state is:')
+  console.log(roomState)
+  console.log('\n\n')
+
+
+  console.log('The users in the room and their states:')
+  console.log(users)
+  console.log('\n\n')
+```
+We joined the room 'roomName', the last argument is optional, it sets your initial user state on the server.
+
 ## How it works
 
 ### Getting authed
