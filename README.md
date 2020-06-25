@@ -1,6 +1,6 @@
-# GTGT
+# GT Client
 
-> GT Playground
+> GroupwareToolkit Client
 
 ## Build Setup
 
@@ -8,32 +8,12 @@
 # install dependencies
 $ npm install
 
-# serve with hot reload at localhost:3000
+# start a dev build with live reload building on changes.
 $ npm run dev
 
-# build for production and launch server
+# build for production
 $ npm run build
-$ npm run start
-
-# generate static project
-$ npm run generate
 ```
-
-For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).
-
-Realtime web app with websockets using Node.js, Express and Socket.io with Vanilla JS on the frontend with Konva.
-
-The Node Server will be running and will host the client at http://localhost:3000
-
-This is an example of a realtime web app with a few features:
-- Rooms
-- Cursors on the canvas
-- Drawing lines on the canvas by dragging
-- Deleting lines on the canvas by clicking
-- Text areas
-- Listing users with synced usernames
-
-Choose a room to join, choose a username, and click connect.
 
 ## How it works
 
