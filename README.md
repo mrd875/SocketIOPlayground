@@ -174,3 +174,33 @@ It will be entirely up to the clients (developers) to keep track of the state an
 
 A developer can use the GT object on the client side to communicate with the server. The GT object will emit events to the developer and allow developers to send messages.
 
+
+## Changes
+
+### v1.0 to v1.1
+There was no authentication before, user's ids was just their socket ids.
+Now the users can tell the server what their id is.
+
+The connect function has been split into multiple functions; connect, auth, join.
+
+Changed event 'init_state' to 'joined' and moved its parameters around.
+
+Before:
+```javascript
+  const gt = new GT()
+  
+  gt.on('init_state', (roomState, users, roomName) => {})
+
+  gt.connect('roomName')
+```
+
+After:
+```javascript
+  const gt = new GT()
+
+  gt.on('joined', (roomName, roomState, users) => {})
+
+  gt.connect()
+  gt.auth('id')
+  gt.join('roomName')
+```
