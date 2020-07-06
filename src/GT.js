@@ -141,6 +141,7 @@ const _ = require('lodash')
  * @property {Object} socket The internal socket we use as communication.
  * @property {String} id Our unique identifier, undefined when we are not authed.
  * @property {String} room What room we are currently in. undefined when we are not in a room.
+ * @property {String} name Our friendly readable name.
  */
 class GT extends EventEmitter {
   /**
@@ -187,11 +188,13 @@ class GT extends EventEmitter {
 
     this.id = undefined
     this.room = undefined
+    this.name = undefined
 
     // when we disconnect from the server
     socket.on('disconnect', (reason) => {
       this.id = undefined
       this.room = undefined
+      this.name = undefined
 
       this.emit('disconnect', reason)
     })
@@ -206,8 +209,9 @@ class GT extends EventEmitter {
     // when we auth.
     socket.on('authed', (authPayload) => {
       this.id = authPayload.id
+      this.name = authPayload.name
 
-      this.emit('authed', authPayload.id, authPayload.state)
+      this.emit('authed', authPayload.id, authPayload.name, authPayload.state)
     })
 
     // when any error is thrown
@@ -271,9 +275,9 @@ class GT extends EventEmitter {
      * @param {String} room The roomname we want to join.
      * @param {Object} userPayload An optional initial state we have as a user.
      */
-  async connectAuthAndJoin (id, room, userPayload) {
+  async connectAuthAndJoin (id, name, room, userPayload) {
     await this.connect()
-    await this.auth(id)
+    await this.auth(id, name)
     await this.join(room, userPayload)
   }
 
@@ -310,8 +314,9 @@ class GT extends EventEmitter {
      * Authenticates to the server. Returns when we authenticate.
      * @throws Error when we cannot auth.
      * @param {String} id The id we want to assign and auth ourselves as.
+     * @param {String} name The friendly readable name we want to have.
      */
-  auth (id) {
+  auth (id, name) {
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) { reject(new Error('We need to be connected.')) }
       if (this.isAuthed()) { reject(new Error('We already authed')) }
@@ -321,7 +326,7 @@ class GT extends EventEmitter {
       this.socket.once('auth', handleAuth = (authPayload) => {
         this.socket.off('error', handleAuthError)
 
-        resolve(authPayload)
+        resolve({ id: authPayload.id, name: authPayload.name, state: authPayload.state })
       })
       this.socket.on('error', handleAuthError = (err) => {
         if (err.type !== 'auth') return
@@ -332,8 +337,12 @@ class GT extends EventEmitter {
         reject(err)
       })
 
+      if (!id) id = this.socket.id
+      if (!name) name = id
+
       this.socket.emit('auth', {
-        id
+        id,
+        name
       })
     })
   }
