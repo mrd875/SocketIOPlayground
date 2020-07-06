@@ -200,7 +200,9 @@ After:
 
   gt.on('joined', (roomName, roomState, users) => {})
 
-  gt.connect()
-  gt.auth('id')
-  gt.join('roomName')
+  gt.connect().then(() => {
+    gt.auth('id').then(() => {
+      gt.join('roomName')
+    })
+  })
 ```
