@@ -8,7 +8,6 @@ const _ = require('lodash')
  *
  * @event GT#authed
  * @param {String} id The id we were given. (typically the id we gave the server)
- * @param {String} name The friendly name we were given.
  * @param {Object} state The state of the user object that was on the server. (the state of the user before we authed)
  */
 
@@ -32,7 +31,7 @@ const _ = require('lodash')
 * Fires when someone joins the room.
 *
 * @event GT#connected
-* @param {String} authObj The auth object of the user who join. Will contain a key 'id'.
+* @param {String} id The id of who joined the room.
 * @param {Object} user The inital state of the user.
 */
 
@@ -142,14 +141,16 @@ const _ = require('lodash')
  * @property {Object} socket The internal socket we use as communication.
  * @property {String} id Our unique identifier, undefined when we are not authed.
  * @property {String} room What room we are currently in. undefined when we are not in a room.
- * @property {String} name Our friendly readable name.
+ *
+ * @property {Object} state If we are handling the state, state of the current room
+ * @property {Object} users If we are handling the state, state of all the users in the room.
  */
 class GT extends EventEmitter {
   /**
    * Returns a new GT object.
    * @param {String} serverIp Optional ip to connect to
    */
-  constructor (serverIp) {
+  constructor (serverIp, opts = {}) {
     super()
 
     const socket = io(serverIp, {
@@ -157,45 +158,73 @@ class GT extends EventEmitter {
       reconnection: false
     })
 
+    if (opts.handleState) this.__handleState = true
+
     this.socket = socket
 
     // when someone joins a room, including us
-    socket.on('connected', (authObj, user) => {
-      this.emit('connected', authObj, user)
+    socket.on('connected', (id, user) => {
+      if (this.isHandlingState()) {
+        this.users[id] = user
+      }
+
+      this.emit('connected', id, user)
     })
 
     // when someone leaves the room
     socket.on('disconnected', (id, reason) => {
+      if (this.isHandlingState()) {
+        delete this.users[id]
+      }
+
       this.emit('disconnected', id, reason)
     })
 
     socket.on('user_updated_reliable', (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+      }
+
       this.emit('user_updated_reliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
     socket.on('user_updated_unreliable', (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+      }
+
       this.emit('user_updated_unreliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
 
     socket.on('state_updated_reliable', (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+      }
+
       this.emit('state_updated_reliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
     })
     socket.on('state_updated_unreliable', (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+      }
+
       this.emit('state_updated_unreliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
     })
 
     this.id = undefined
     this.room = undefined
-    this.name = undefined
+    if (this.isHandlingState()) {
+      this.users = {}
+      this.state = {}
+    }
 
     // when we disconnect from the server
     socket.on('disconnect', (reason) => {
       this.id = undefined
       this.room = undefined
-      this.name = undefined
+      if (this.isHandlingState()) {
+        this.users = {}
+        this.state = {}
+      }
 
       this.emit('disconnect', reason)
     })
@@ -203,6 +232,10 @@ class GT extends EventEmitter {
     // when we join a room
     socket.on('joined', (room, roomState, users) => {
       this.room = room
+      if (this.isHandlingState()) {
+        this.users = users
+        this.state = roomState
+      }
 
       this.emit('joined', room, roomState, users)
     })
@@ -210,9 +243,12 @@ class GT extends EventEmitter {
     // when we auth.
     socket.on('authed', (authPayload) => {
       this.id = authPayload.id
-      this.name = authPayload.name
 
-      this.emit('authed', authPayload.id, authPayload.name, authPayload.state)
+      if (this.isHandlingState()) {
+        this.users[authPayload.id] = authPayload.state
+      }
+
+      this.emit('authed', authPayload.id, authPayload.state)
     })
 
     // when any error is thrown
@@ -233,6 +269,10 @@ class GT extends EventEmitter {
     // when we were removed from a room
     socket.on('leftroom', (reason) => {
       this.room = undefined
+      if (this.isHandlingState()) {
+        this.users = {}
+        this.state = {}
+      }
 
       this.emit('leftroom', reason)
     })
@@ -246,6 +286,13 @@ class GT extends EventEmitter {
         .omitBy(_.isNil) // remove null and undefined from object
         .value() // get value
     }
+  }
+
+  /**
+   * @returns {Boolean} If we are handling the state.
+   */
+  isHandlingState () {
+    return this.__handleState === true
   }
 
   /**
@@ -273,12 +320,13 @@ class GT extends EventEmitter {
      * @async
      * Connects to the server, authenticates and joins a room.
      * @throws Errors
+     * @param {String} id The id we want to assign and auth ourselves as.
      * @param {String} room The roomname we want to join.
      * @param {Object} userPayload An optional initial state we have as a user.
      */
-  async connectAuthAndJoin (id, name, room, userPayload) {
+  async connectAuthAndJoin (id, room, userPayload) {
     await this.connect()
-    await this.auth(id, name)
+    await this.auth(id)
     await this.join(room, userPayload)
   }
 
@@ -287,7 +335,6 @@ class GT extends EventEmitter {
      * Connects to the server, returns when we connect.
      * @throws Error when cannot connect for some reason.
      * @throws Error if we are already connected.
-     * @param {String} id The id we want to assign and auth ourselves as.
      */
   connect () {
     return new Promise((resolve, reject) => {
@@ -315,9 +362,8 @@ class GT extends EventEmitter {
      * Authenticates to the server. Returns when we authenticate.
      * @throws Error when we cannot auth.
      * @param {String} id The id we want to assign and auth ourselves as.
-     * @param {String} name The friendly readable name we want to have.
      */
-  auth (id, name) {
+  auth (id) {
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) { reject(new Error('We need to be connected.')) }
       if (this.isAuthed()) { reject(new Error('We already authed')) }
@@ -327,7 +373,7 @@ class GT extends EventEmitter {
       this.socket.once('auth', handleAuth = (authPayload) => {
         this.socket.off('error', handleAuthError)
 
-        resolve({ id: authPayload.id, name: authPayload.name, state: authPayload.state })
+        resolve({ id: authPayload.id, state: authPayload.state })
       })
       this.socket.on('error', handleAuthError = (err) => {
         if (err.type !== 'auth') return
@@ -339,11 +385,9 @@ class GT extends EventEmitter {
       })
 
       if (!id) id = this.socket.id
-      if (!name) name = id
 
       this.socket.emit('auth', {
-        id,
-        name
+        id
       })
     })
   }
