@@ -180,31 +180,41 @@ class GT extends EventEmitter {
       this.emit('disconnected', id, reason)
     })
 
-    socket.on('user_updated_reliable', (id, payloadDelta) => {
+    const updateUser = (id, payloadDelta) => {
       if (this.isHandlingState()) {
+        _.merge(this.users[id], payloadDelta)
+        this.users[id] = this.removeObjectsWithNull(this.users[id])
       }
+    }
+
+    const updateState = (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+        _.merge(this.state, payloadDelta)
+        this.state = this.removeObjectsWithNull(this.state)
+      }
+    }
+
+    socket.on('user_updated_reliable', (id, payloadDelta) => {
+      updateUser(id, payloadDelta)
 
       this.emit('user_updated_reliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
     socket.on('user_updated_unreliable', (id, payloadDelta) => {
-      if (this.isHandlingState()) {
-      }
+      updateUser(id, payloadDelta)
 
       this.emit('user_updated_unreliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
 
     socket.on('state_updated_reliable', (id, payloadDelta) => {
-      if (this.isHandlingState()) {
-      }
+      updateState(id, payloadDelta)
 
       this.emit('state_updated_reliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
     })
     socket.on('state_updated_unreliable', (id, payloadDelta) => {
-      if (this.isHandlingState()) {
-      }
+      updateState(id, payloadDelta)
 
       this.emit('state_updated_unreliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
