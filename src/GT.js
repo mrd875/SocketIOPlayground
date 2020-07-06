@@ -8,6 +8,7 @@ const _ = require('lodash')
  *
  * @event GT#authed
  * @param {String} id The id we were given. (typically the id we gave the server)
+ * @param {String} name The friendly name we were given.
  * @param {Object} state The state of the user object that was on the server. (the state of the user before we authed)
  */
 
@@ -31,7 +32,7 @@ const _ = require('lodash')
 * Fires when someone joins the room.
 *
 * @event GT#connected
-* @param {String} id The id of the user who connected.
+* @param {String} authObj The auth object of the user who join. Will contain a key 'id'.
 * @param {Object} user The inital state of the user.
 */
 
@@ -159,8 +160,8 @@ class GT extends EventEmitter {
     this.socket = socket
 
     // when someone joins a room, including us
-    socket.on('connected', (id, user) => {
-      this.emit('connected', id, user)
+    socket.on('connected', (authObj, user) => {
+      this.emit('connected', authObj, user)
     })
 
     // when someone leaves the room
