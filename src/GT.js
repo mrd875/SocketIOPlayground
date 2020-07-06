@@ -11,7 +11,7 @@ const _ = require('lodash')
  * @param {Object} state The state of the user object that was on the server. (the state of the user before we authed)
  */
 
- /**
+/**
  * Fires when we just joined a room.
  *
  * @event GT#joined
@@ -104,6 +104,22 @@ const _ = require('lodash')
 */
 
 /**
+* Fires when we receive a delta of the room's state
+*
+* @event GT#state_updated
+* @param {String} id The id of the user who sent the update
+* @param {Object} payloadDelta The delta of the state.
+*/
+
+/**
+* Fires when we receive a delta of a user's state
+*
+* @event GT#user_updated
+* @param {String} id The id of the user who sent the update
+* @param {Object} payloadDelta The delta of the state.
+*/
+
+/**
  * The GT object.
  *
  * @emits GT#connected
@@ -112,6 +128,8 @@ const _ = require('lodash')
  * @emits GT#user_updated_unreliable
  * @emits GT#state_updated_reliable
  * @emits GT#state_updated_unreliable
+ * @emits GT#state_updated
+ * @emits GT#user_updated
  * @emits GT#connect
  * @emits GT#disconnect
  * @emits GT#connect_error
@@ -151,16 +169,20 @@ class GT extends EventEmitter {
 
     socket.on('user_updated_reliable', (id, payloadDelta) => {
       this.emit('user_updated_reliable', id, payloadDelta)
+      this.emit('user_updated', id, payloadDelta)
     })
     socket.on('user_updated_unreliable', (id, payloadDelta) => {
       this.emit('user_updated_unreliable', id, payloadDelta)
+      this.emit('user_updated', id, payloadDelta)
     })
 
     socket.on('state_updated_reliable', (id, payloadDelta) => {
       this.emit('state_updated_reliable', id, payloadDelta)
+      this.emit('state_updated', id, payloadDelta)
     })
     socket.on('state_updated_unreliable', (id, payloadDelta) => {
       this.emit('state_updated_unreliable', id, payloadDelta)
+      this.emit('state_updated', id, payloadDelta)
     })
 
     this.id = undefined
@@ -320,7 +342,7 @@ class GT extends EventEmitter {
       this.socket.once('joined', handleJoin = (room, roomState, users) => {
         this.socket.off('error', handleJoinError)
 
-        resolve({room, roomState, users})
+        resolve({ room, roomState, users })
       })
       this.socket.on('error', handleJoinError = (err) => {
         if (err.type !== 'join') return
