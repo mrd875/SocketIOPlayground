@@ -266,9 +266,23 @@ class GT extends EventEmitter {
 
   /**
      * @async
+     * Connects to the server, authenticates and joins a room.
+     * @throws Errors
+     * @param {String} room The roomname we want to join.
+     * @param {Object} userPayload An optional initial state we have as a user.
+     */
+  async connectAuthAndJoin (id, room, userPayload) {
+    await this.connect()
+    await this.auth(id)
+    await this.join(room, userPayload)
+  }
+
+  /**
+     * @async
      * Connects to the server, returns when we connect.
      * @throws Error when cannot connect for some reason.
      * @throws Error if we are already connected.
+     * @param {String} id The id we want to assign and auth ourselves as.
      */
   connect () {
     return new Promise((resolve, reject) => {
