@@ -2,28 +2,62 @@
 
 > GroupwareToolkit Client
 
-## Build Setup
-
-```bash
-# install dependencies
-$ npm install
-
-# start a dev build with live reload building on changes.
-$ npm run dev
-
-# build for production
-$ npm run build
-```
-
 This is a socket.io client application. Its designed to abstract away communication of messages from a foreign source from developers.
 
 The server is completely independent of client logic and is only keeping a collective state for the users and rooms.
 
 You need the server (https://github.com/mrd875/GroupwareToolkitServer).
 
+## Installation
+
+### Via NPM
+
+```bash
+$ npm install gt-client
+```
+
+### Via CDN
+
+```html
+<script src="https://unpkg.com/gt-client"></script>
+```
+
+## Build Setup
+
+```bash
+# clone the repo
+$ git clone https://github.com/mrd875/GroupwareToolkitClient
+
+# cd into the repo folder
+$ cd GroupwareToolkitClient
+
+# install dependencies
+$ npm install
+
+
+# build folder is in the dist folder
+
+# start a dev build with live reload building for file changes
+$ npm run dev
+
+# build for production
+$ npm run build
+
+# run tests
+$ npm test
+```
+
 ## Usage
 
 I'll be using async/await as the GT API is promise based. (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+
+## Bringing in the GT object
+```javascript
+const GT = require('gt') // cjs
+import GT from 'gt' // es6
+```
+
+If using the CDN, the GT object is already exposed.
 
 ### Create the GT object.
 ```javascript
