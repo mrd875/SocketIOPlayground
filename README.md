@@ -51,7 +51,7 @@ $ npm test
 
 I'll be using async/await as the GT API is promise based. (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
 
-## Bringing in the GT object
+### Bringing in the GT object
 ```javascript
 const GT = require('gt') // cjs
 import GT from 'gt' // es6
