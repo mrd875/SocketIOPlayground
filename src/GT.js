@@ -309,7 +309,7 @@ class GT extends EventEmitter {
      * @returns {Boolean} If we are connected to the server.
      */
   isConnected () {
-    return this.socket.connected
+    return this.socket.connected === true
   }
 
   /**

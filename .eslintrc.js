@@ -6,6 +6,7 @@ module.exports = {
   },
   extends: ['standard'],
   globals: {
+    GT: true,
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly'
   },

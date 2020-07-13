@@ -16,10 +16,10 @@
   },
 
   // Add the IDs of extensions you want installed when the container is created.
-  "extensions": ["dbaeumer.vscode-eslint"],
+  "extensions": ["dbaeumer.vscode-eslint", "ritwickdey.liveserver"],
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [3000 /*HTTP*/, 9229 /*DEBUG*/]
+  "forwardPorts": [9229 /*DEBUG*/, 5500 /*HTTP*/]
 
   // Use 'postCreateCommand' to run commands after the container is created.
   // "postCreateCommand": "yarn install",
