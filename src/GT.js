@@ -380,7 +380,7 @@ class GT extends EventEmitter {
 
       let handleAuth
       let handleAuthError
-      this.socket.once('auth', handleAuth = (authPayload) => {
+      this.socket.once('authed', handleAuth = (authPayload) => {
         this.socket.off('error', handleAuthError)
 
         resolve({ id: authPayload.id, state: authPayload.state })
