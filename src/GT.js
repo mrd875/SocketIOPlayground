@@ -72,7 +72,7 @@ const _ = require('lodash')
  */
 
 /**
-* Fires when we receive a delta of a user's state.
+* Fires when we receive a delta of a user's state of the reliable channel.
 *
 * @event GT#user_updated_reliable
 * @param {String} id The id of the user who's state got updated.
@@ -80,7 +80,7 @@ const _ = require('lodash')
 */
 
 /**
-* Fires when we receive a delta of a user's state.
+* Fires when we receive a delta of a user's state of the unreliable channel.
 *
 * @event GT#user_updated_unreliable
 * @param {String} id The id of the user who's state got updated.
@@ -88,7 +88,7 @@ const _ = require('lodash')
 */
 
 /**
-* Fires when we receive a delta of the room's state
+* Fires when we receive a delta of the room's state of the reliable channel.
 *
 * @event GT#state_updated_reliable
 * @param {String} id The id of the user who sent the update
@@ -96,7 +96,7 @@ const _ = require('lodash')
 */
 
 /**
-* Fires when we receive a delta of the room's state
+* Fires when we receive a delta of the room's state of the unreliable channel.
 *
 * @event GT#state_updated_unreliable
 * @param {String} id The id of the user who sent the update
@@ -104,7 +104,7 @@ const _ = require('lodash')
 */
 
 /**
-* Fires when we receive a delta of the room's state
+* Fires when we receive a delta of the room's state for both reliable and unreliable channels.
 *
 * @event GT#state_updated
 * @param {String} id The id of the user who sent the update
@@ -112,11 +112,23 @@ const _ = require('lodash')
 */
 
 /**
-* Fires when we receive a delta of a user's state
+* Fires when we receive a delta of a user's state for both reliable and unreliable channels.
 *
 * @event GT#user_updated
 * @param {String} id The id of the user who sent the update
 * @param {Object} payloadDelta The delta of the state.
+*/
+
+/**
+* Fires when the users object is updated. Only when handling of state is enabled.
+*
+* @event GT#users_object_updated
+*/
+
+/**
+* Fires when the state object is updated. Only when handling of state is enabled.
+*
+* @event GT#state_object_updated
 */
 
 /**
@@ -130,6 +142,8 @@ const _ = require('lodash')
  * @emits GT#state_updated_unreliable
  * @emits GT#state_updated
  * @emits GT#user_updated
+ * @emits GT#users_object_updated
+ * @emits GT#state_object_updated
  * @emits GT#connect
  * @emits GT#disconnect
  * @emits GT#connect_error
@@ -166,6 +180,7 @@ class GT extends EventEmitter {
     socket.on('connected', (id, user) => {
       if (this.isHandlingState()) {
         this.users[id] = user
+        this.emit('users_object_updated')
       }
 
       this.emit('connected', id, user)
@@ -175,6 +190,7 @@ class GT extends EventEmitter {
     socket.on('disconnected', (id, reason) => {
       if (this.isHandlingState()) {
         delete this.users[id]
+        this.emit('users_object_updated')
       }
 
       this.emit('disconnected', id, reason)
@@ -184,6 +200,8 @@ class GT extends EventEmitter {
       if (this.isHandlingState()) {
         _.merge(this.users[id], payloadDelta)
         this.users[id] = this.removeObjectsWithNull(this.users[id])
+
+        this.emit('users_object_updated')
       }
     }
 
@@ -191,6 +209,8 @@ class GT extends EventEmitter {
       if (this.isHandlingState()) {
         _.merge(this.state, payloadDelta)
         this.state = this.removeObjectsWithNull(this.state)
+
+        this.emit('state_object_updated')
       }
     }
 
@@ -225,6 +245,8 @@ class GT extends EventEmitter {
     if (this.isHandlingState()) {
       this.users = {}
       this.state = {}
+      this.emit('users_object_updated')
+      this.emit('state_object_updated')
     }
 
     // when we disconnect from the server
@@ -234,6 +256,8 @@ class GT extends EventEmitter {
       if (this.isHandlingState()) {
         this.users = {}
         this.state = {}
+        this.emit('users_object_updated')
+        this.emit('state_object_updated')
       }
 
       this.emit('disconnect', reason)
@@ -245,6 +269,8 @@ class GT extends EventEmitter {
       if (this.isHandlingState()) {
         this.users = users
         this.state = roomState
+        this.emit('users_object_updated')
+        this.emit('state_object_updated')
       }
 
       this.emit('joined', room, roomState, users)
@@ -256,6 +282,7 @@ class GT extends EventEmitter {
 
       if (this.isHandlingState()) {
         this.users[authPayload.id] = authPayload.state
+        this.emit('users_object_updated')
       }
 
       this.emit('authed', authPayload.id, authPayload.state)
@@ -282,6 +309,8 @@ class GT extends EventEmitter {
       if (this.isHandlingState()) {
         this.users = {}
         this.state = {}
+        this.emit('users_object_updated')
+        this.emit('state_object_updated')
       }
 
       this.emit('leftroom', reason)
@@ -431,6 +460,8 @@ class GT extends EventEmitter {
         reject(err)
       })
 
+      if (!room) room = ''
+
       this.socket.emit('join', { room }, userPayload)
     })
   }
@@ -519,6 +550,22 @@ class GT extends EventEmitter {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
     this.socket.emit('user_updated_unreliable', payloadDelta)
     return this
+  }
+
+  /**
+   * Sends to the server a delta of the our user's state immediately. (reliable)
+   * @param {Object} payloadDelta The delta object to send to the server.
+   */
+  updateUser (payloadDelta) {
+    return this.updateUserReliable(payloadDelta)
+  }
+
+  /**
+   * Sends to the server a delta of the room's state immediately. (reliable)
+   * @param {Object} payloadDelta The delta object to send to the server.
+   */
+  updateState (payloadDelta) {
+    return this.updateStateReliable(payloadDelta)
   }
 }
 
