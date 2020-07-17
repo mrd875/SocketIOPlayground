@@ -328,7 +328,7 @@ class GT extends EventEmitter {
   }
 
   /**
-   * @returns {Boolean} If we are handling the state.
+   * @returns {Boolean} If we are handling the state. If true, this.users will contain the users in the current room, and this.state will contain the state of the room.
    */
   isHandlingState () {
     return this.__handleState === true
