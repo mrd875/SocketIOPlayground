@@ -325,6 +325,12 @@ class GT extends EventEmitter {
         .omitBy(_.isNil) // remove null and undefined from object
         .value() // get value
     }
+
+    // generates a random string
+    // thanks https://gist.github.com/6174/6062387
+    this.generateRandomId = () => {
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    }
   }
 
   /**
