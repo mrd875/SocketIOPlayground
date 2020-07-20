@@ -6,7 +6,45 @@
   <title>Document</title>
 </head>
 <body>
-  <script src="../dist/gt.umd.js"></script>
-  <script>console.log(GT)</script>
+  <button id="connectbtn">Connect</button>
+
+  <div id="disconnected">
+    <label for="ip">GT Server IP:</label>
+    <input type="text" name="ip" id="ip">
+  </div>
+
+  <div id="connected">
+    <label for="id">Your ID:</label>
+    <input type="text" name="id" id="id">
+    <button id="authbtn">Authenticate</button>
+  </div>
+
+  <div id="authed">
+    <label for="room">Room to join:</label>
+    <input type="text" name="room" id="room">
+    <button id="joinbtn">Join room</button>
+  </div>
+
+  <div id="joined">
+    <button id="leaveroombtn">Leave room</button>
+    <p id="info"></p>
+
+    <label for="users">Current users</label>
+    <textarea name="users" id="users" cols="30" rows="10" readonly></textarea>
+
+    <label for="state">Current state</label>
+    <textarea name="state" id="state" cols="30" rows="10" readonly></textarea>
+
+    <textarea name="updateuser" id="updateuser" cols="30" rows="10">{test: 'json obj'}</textarea>
+    <button id="updateuserbtn">Send user update reliable</button>
+    <button id="updateuserbtnunr">Send user update unreliable</button>
+
+    <textarea name="updatestate" id="updatestate" cols="30" rows="10">{test: 'json obj'}</textarea>
+    <button id="updatestatebtn">Send state update reliable</button>
+    <button id="updatestatebtnunr">Send state update unreliable</button>
+  </div>
+
+  <script src="../dist/gt.umd.dev.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>
