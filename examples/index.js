@@ -183,9 +183,15 @@ async function main () {
 
   joinBtn.addEventListener('click', async () => {
     const roomName = roomInput.value
-    let userStateText = startingUserStateInput.value
-    if (userStateText === '') userStateText = '{}'
-    const userState = JSON.parse(userStateText)
+    const userStateText = startingUserStateInput.value
+    let userState
+
+    try {
+      userState = JSON.parse(userStateText)
+    } catch {
+      userState = undefined
+    }
+
     console.log('Joining room', roomName, 'with user state', userState)
 
     joinBtn.disabled = true
@@ -206,6 +212,8 @@ async function main () {
 
   leaveRoomBtn.addEventListener('click', async () => {
     console.log('Leaving room')
+
+    startingUserStateInput.value = JSON.stringify(gt.users[gt.id])
 
     leaveRoomBtn.disabled = true
     try {
