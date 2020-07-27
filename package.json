@@ -29,7 +29,7 @@
   "homepage": "https://github.com/mrd875/GroupwareToolkitClient#readme",
   "dependencies": {
     "consola": "^2.12.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "socket.io-client": "^2.3.0"
   },
   "devDependencies": {
