@@ -14,7 +14,7 @@ describe('(cjs) GT Server Client Communication', function () {
     consola.log('Starting GT server...')
 
     // start the server.
-    servProc = spawn('npm', ['start'], {
+    servProc = spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start'], {
       cwd: './temp/GroupwareToolkitServer'
     })
 
