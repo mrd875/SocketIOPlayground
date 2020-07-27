@@ -28,6 +28,7 @@ module.exports = [{
 },
 {
   name: 'cjs',
+  target: 'node',
   entry: './src/index.js',
   output: {
     libraryTarget: 'commonjs2',

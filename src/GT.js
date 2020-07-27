@@ -1,6 +1,6 @@
 /* eslint-disable require-await */
 const EventEmitter = require('./EventEmitter')
-const io = require('socket.io-client/dist/socket.io')
+const io = require('socket.io-client')
 const _ = require('lodash')
 
 /**
@@ -387,10 +387,10 @@ class GT extends EventEmitter {
 
       let handleConnect
       let handleConnectError
-      this.socket.once('connect', handleConnect = (socketId) => {
+      this.socket.once('connect', handleConnect = () => {
         this.socket.off('connect_error', handleConnectError)
 
-        resolve(socketId)
+        resolve()
       })
       this.socket.once('connect_error', handleConnectError = (err) => {
         this.socket.off('connect', handleConnect)

@@ -14,7 +14,8 @@
     "build": "webpack --mode production --config webpack.config.js",
     "prepublishOnly": "npm run build",
     "dev": "webpack --mode development --config webpack.config.dev.js --watch",
-    "test": "mocha || true"
+    "test": "rm -rf temp && mkdir -p temp && cd temp && git clone https://github.com/mrd875/GroupwareToolkitServer && cd GroupwareToolkitServer && npm i --only=prod && cd ../.. && mocha",
+    "test_fast": "mocha"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "mocha": "^8.0.1",
+    "tree-kill": "^1.2.2",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
   }
