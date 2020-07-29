@@ -1,4 +1,14 @@
 .browserslistrc
 rollup.config.js
-src
+src/
 yarn.lock
+.devcontainer/
+.vscode/
+examples/
+temp/
+test/
+.editorconfig
+.eslintrc.js
+appveyor.yml
+webpack.config.js
+webpack.config.dev.js
