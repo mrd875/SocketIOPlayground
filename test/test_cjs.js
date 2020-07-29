@@ -1,42 +1,23 @@
-const { spawn } = require('child_process')
 const assert = require('chai').assert
 const GT = require('../dist/gt.cjs')
 const consola = require('consola')
+const io = require('../temp/GroupwareToolkitServer/src/io')
 
 const servUrl = 'http://localhost:3000'
 
 describe('(cjs) GT Server Client Communication', function () {
   this.timeout(10000)
 
-  let servProc
+  before(function (done) {
+    this.server = io.listen(3000)
+    consola.log('Server listening...')
+    done()
+  })
 
-  before(() => new Promise((resolve, reject) => {
-    consola.log('Starting GT server...')
-
-    // start the server.
-    servProc = spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start'], {
-      cwd: './temp/GroupwareToolkitServer'
-    })
-
-    servProc.stdout.on('data', (data) => {
-      const str = data.toString()
-
-      if (str.includes('Server listening')) { console.log('Server started.'); resolve() }
-    })
-
-    servProc.stderr.on('data', (data) => {
-      reject(data.toString())
-    })
-
-    servProc.on('close', (code, signal) => {
-      console.log('Server closed.')
-    })
-  }))
-
-  after(() => {
-    console.log('Closing server...')
-    // kill the server
-    require('tree-kill')(servProc.pid)
+  after(function (done) {
+    this.server.close()
+    consola.log('Server closed')
+    done()
   })
 
   it('Can connect', async function () {
