@@ -23,7 +23,7 @@ $ npm install gt-client
 ```
 
 ## Build Setup
-
+Builds into the dist/ folder.
 ```bash
 # clone the repo
 $ git clone https://github.com/mrd875/GroupwareToolkitClient
@@ -53,8 +53,8 @@ I'll be using async/await as the GT API is promise based. (https://developer.moz
 
 ### Bringing in the GT object
 ```javascript
-const GT = require('gt') // cjs
-import GT from 'gt' // es6
+const GT = require('gt-client') // cjs
+import GT from 'gt-client' // es6
 ```
 
 If using the CDN, the GT object is already exposed.
