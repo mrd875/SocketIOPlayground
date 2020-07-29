@@ -10,13 +10,13 @@ describe('(cjs) GT Server Client Communication', function () {
 
   before(function (done) {
     this.server = io.listen(3000)
-    consola.log('Server listening...')
+    consola.info('Server listening...')
     done()
   })
 
   after(function (done) {
     this.server.close()
-    consola.log('Server closed')
+    consola.info('Server closed')
     done()
   })
 
