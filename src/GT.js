@@ -355,6 +355,12 @@ class GT extends EventEmitter {
     this.generateRandomId = () => {
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
+
+    this.BATCH_INTERVAL = 50
+
+    this.BATCH_EVENT_LISTENER = new EventEmitter()
+    this.BATCH_STATE_ARRAY = []
+    this.__stateBatchHandler()
   }
 
   /**
@@ -596,6 +602,34 @@ class GT extends EventEmitter {
    */
   updateState (payloadDelta) {
     return this.updateStateReliable(payloadDelta)
+  }
+
+  async __stateBatchHandler () {
+    let lastMessageTime = 0
+
+    const batchEventPromise = new Promise(resolve => this.BATCH_EVENT_LISTENER.on('state', resolve))
+    for (;;) {
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, this.BATCH_INTERVAL))
+      await Promise.race([timeoutPromise, batchEventPromise]) // we wait until either we receive a 'state' event OR we timeout
+
+      if (this.BATCH_STATE_ARRAY.length <= 0) { continue } // check if there is a batched message to send out
+
+      const now = Date.now()
+      if (now - lastMessageTime < this.BATCH_INTERVAL) { continue } // check if enough time has elapsed
+
+      // send the message out
+      lastMessageTime = now
+
+      this.socket.emit('state_updated_batched', this.BATCH_STATE_ARRAY)
+
+      this.BATCH_STATE_ARRAY.length = 0 // clear out the message array
+    }
+  }
+
+  updateStateBatched (payloadDelta) {
+    this.BATCH_STATE_ARRAY.push(payloadDelta) // add the message to the array
+    this.BATCH_EVENT_LISTENER.emit('state') // notify the batch handler we have a new message
+    return this
   }
 }
 
