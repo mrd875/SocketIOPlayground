@@ -251,14 +251,18 @@ class GT extends EventEmitter {
       this.emit('state_updated_unreliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
     })
-    socket.on('state_updated_batched', (id, e) => {
+    socket.on('state_updated_batched', async (id, e) => {
       // e is an array of messages we need to apply
-      for (const i in e) {
+
+      const waittime = this.BATCH_INTERVAL / e.length
+      for (let i = 0; i < e.length; i++) {
         const msg = e[i]
 
         updateState(id, msg)
 
         this.emit('state_updated', id, msg)
+
+        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
       }
 
       this.emit('state_updated_batched', id, e)
