@@ -607,10 +607,11 @@ class GT extends EventEmitter {
   async __stateBatchHandler () {
     let lastMessageTime = 0
 
-    const batchEventPromise = new Promise(resolve => this.BATCH_EVENT_LISTENER.on('state', resolve))
     for (;;) {
+      const batchEventPromise = new Promise(resolve => this.BATCH_EVENT_LISTENER.once('state', resolve))
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, this.BATCH_INTERVAL))
       await Promise.race([timeoutPromise, batchEventPromise]) // we wait until either we receive a 'state' event OR we timeout
+      this.BATCH_EVENT_LISTENER.off('state')
 
       if (this.BATCH_STATE_ARRAY.length <= 0) { continue } // check if there is a batched message to send out
 
