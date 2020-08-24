@@ -226,14 +226,17 @@ class GT extends EventEmitter {
       this.emit('user_updated_unreliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
-    socket.on('user_updated_batched', (id, e) => {
+    socket.on('user_updated_batched', async (id, e) => {
       // e is an array of messages we need to apply
-      for (const i in e) {
+      const waittime = this.BATCH_INTERVAL / e.length
+      for (let i = 0; i < e.length; i++) {
         const msg = e[i]
 
         updateUser(id, msg)
 
         this.emit('user_updated', id, msg)
+
+        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
       }
 
       this.emit('user_updated_batched', id, e)
@@ -253,7 +256,6 @@ class GT extends EventEmitter {
     })
     socket.on('state_updated_batched', async (id, e) => {
       // e is an array of messages we need to apply
-
       const waittime = this.BATCH_INTERVAL / e.length
       for (let i = 0; i < e.length; i++) {
         const msg = e[i]
@@ -262,7 +264,7 @@ class GT extends EventEmitter {
 
         this.emit('state_updated', id, msg)
 
-        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
+        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) } // smooth the messages
       }
 
       this.emit('state_updated_batched', id, e)
@@ -361,10 +363,13 @@ class GT extends EventEmitter {
     }
 
     this.BATCH_INTERVAL = 50
-
     this.BATCH_EVENT_LISTENER = new EventEmitter()
+
     this.BATCH_STATE_ARRAY = []
     this.__stateBatchHandler()
+
+    this.BATCH_USER_ARRAY = []
+    this.__userBatchHandler()
   }
 
   /**
@@ -608,6 +613,29 @@ class GT extends EventEmitter {
     return this.updateStateReliable(payloadDelta)
   }
 
+  async __userBatchHandler () {
+    let lastMessageTime = 0
+
+    for (;;) {
+      const batchEventPromise = new Promise(resolve => this.BATCH_EVENT_LISTENER.once('user', resolve))
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, this.BATCH_INTERVAL))
+      await Promise.race([timeoutPromise, batchEventPromise]) // we wait until either we receive a 'user' event OR we timeout
+      this.BATCH_EVENT_LISTENER.off('user')
+
+      if (this.BATCH_USER_ARRAY.length <= 0) { continue } // check if there is a batched message to send out
+
+      const now = Date.now()
+      if (now - lastMessageTime < this.BATCH_INTERVAL) { continue } // check if enough time has elapsed
+
+      if (!this.isInRoom()) { this.BATCH_USER_ARRAY.length = 0; continue } // make sure we are in a room
+
+      // send the message out
+      lastMessageTime = now
+      this.socket.emit('user_updated_batched', this.BATCH_USER_ARRAY)
+      this.BATCH_USER_ARRAY.length = 0 // clear out the message array
+    }
+  }
+
   async __stateBatchHandler () {
     let lastMessageTime = 0
 
@@ -636,6 +664,14 @@ class GT extends EventEmitter {
 
     this.BATCH_STATE_ARRAY.push(payloadDelta) // add the message to the array
     this.BATCH_EVENT_LISTENER.emit('state') // notify the batch handler we have a new message
+    return this
+  }
+
+  updateUserBatched (payloadDelta) {
+    if (!this.isInRoom()) { throw new Error('Need to be in a room') }
+
+    this.BATCH_USER_ARRAY.push(payloadDelta) // add the message to the array
+    this.BATCH_EVENT_LISTENER.emit('user') // notify the batch handler we have a new message
     return this
   }
 }
