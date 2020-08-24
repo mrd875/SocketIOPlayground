@@ -618,16 +618,18 @@ class GT extends EventEmitter {
       const now = Date.now()
       if (now - lastMessageTime < this.BATCH_INTERVAL) { continue } // check if enough time has elapsed
 
+      if (!this.isInRoom()) { this.BATCH_STATE_ARRAY.length = 0; continue } // make sure we are in a room
+
       // send the message out
       lastMessageTime = now
-
       this.socket.emit('state_updated_batched', this.BATCH_STATE_ARRAY)
-
       this.BATCH_STATE_ARRAY.length = 0 // clear out the message array
     }
   }
 
   updateStateBatched (payloadDelta) {
+    if (!this.isInRoom()) { throw new Error('Need to be in a room') }
+
     this.BATCH_STATE_ARRAY.push(payloadDelta) // add the message to the array
     this.BATCH_EVENT_LISTENER.emit('state') // notify the batch handler we have a new message
     return this
