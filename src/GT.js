@@ -226,6 +226,18 @@ class GT extends EventEmitter {
       this.emit('user_updated_unreliable', id, payloadDelta)
       this.emit('user_updated', id, payloadDelta)
     })
+    socket.on('user_updated_batched', (id, e) => {
+      // e is an array of messages we need to apply
+      for (const i in e) {
+        const msg = e[i]
+
+        updateUser(id, msg)
+
+        this.emit('user_updated', id, msg)
+      }
+
+      this.emit('user_updated_batched', id, e)
+    })
 
     socket.on('state_updated_reliable', (id, payloadDelta) => {
       updateState(id, payloadDelta)
@@ -238,6 +250,18 @@ class GT extends EventEmitter {
 
       this.emit('state_updated_unreliable', id, payloadDelta)
       this.emit('state_updated', id, payloadDelta)
+    })
+    socket.on('state_updated_batched', (id, e) => {
+      // e is an array of messages we need to apply
+      for (const i in e) {
+        const msg = e[i]
+
+        updateState(id, msg)
+
+        this.emit('state_updated', id, msg)
+      }
+
+      this.emit('state_updated_batched', id, e)
     })
 
     this.id = undefined
