@@ -120,6 +120,22 @@ const _ = require('lodash')
 */
 
 /**
+* Fires when we receive an array of messages of a user's delta state.
+*
+* @event GT#user_updated_batched
+* @param {String} id The id of the user who sent the update
+* @param {Object} e An array of payloadDeltas in order.
+*/
+
+/**
+* Fires when we receive an array of messages of the room's delta state.
+*
+* @event GT#state_updated_batched
+* @param {String} id The id of the user who sent the update
+* @param {Object} e An array of payloadDeltas in order.
+*/
+
+/**
 * Fires when the users object is updated. Only when handling of state is enabled.
 *
 * @event GT#users_object_updated
@@ -151,6 +167,8 @@ const _ = require('lodash')
  * @emits GT#authed
  * @emits GT#joined
  * @emits GT#leftroom
+ * @emits GT#state_updated_batched
+ * @emits GT#user_updated_batched
  *
  * @property {Object} socket The internal socket we use as communication.
  * @property {String} id Our unique identifier, undefined when we are not authed.
@@ -167,109 +185,18 @@ class GT extends EventEmitter {
   constructor (serverIp, opts = {}) {
     super()
 
+    // create the socket
     const socket = io(serverIp, {
       autoConnect: false,
       reconnection: false
     })
 
+    // check if we should handle the state.
     if (opts.handleState) this.__handleState = true
 
     this.socket = socket
 
-    // when someone joins a room, including us
-    socket.on('connected', (id, user) => {
-      if (this.isHandlingState()) {
-        this.users[id] = user
-        this.emit('users_object_updated')
-      }
-
-      this.emit('connected', id, user)
-    })
-
-    // when someone leaves the room
-    socket.on('disconnected', (id, reason) => {
-      if (this.isHandlingState()) {
-        delete this.users[id]
-        this.emit('users_object_updated')
-      }
-
-      this.emit('disconnected', id, reason)
-    })
-
-    const updateUser = (id, payloadDelta) => {
-      if (this.isHandlingState()) {
-        _.merge(this.users[id], payloadDelta)
-        this.users[id] = this.removeObjectsWithNull(this.users[id])
-
-        this.emit('users_object_updated')
-      }
-    }
-
-    const updateState = (id, payloadDelta) => {
-      if (this.isHandlingState()) {
-        _.merge(this.state, payloadDelta)
-        this.state = this.removeObjectsWithNull(this.state)
-
-        this.emit('state_object_updated')
-      }
-    }
-
-    socket.on('user_updated_reliable', (id, payloadDelta) => {
-      updateUser(id, payloadDelta)
-
-      this.emit('user_updated_reliable', id, payloadDelta)
-      this.emit('user_updated', id, payloadDelta)
-    })
-    socket.on('user_updated_unreliable', (id, payloadDelta) => {
-      updateUser(id, payloadDelta)
-
-      this.emit('user_updated_unreliable', id, payloadDelta)
-      this.emit('user_updated', id, payloadDelta)
-    })
-    socket.on('user_updated_batched', async (id, e) => {
-      // e is an array of messages we need to apply
-      const waittime = this.BATCH_INTERVAL / e.length
-      for (let i = 0; i < e.length; i++) {
-        const msg = e[i]
-
-        updateUser(id, msg)
-
-        this.emit('user_updated', id, msg)
-
-        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
-      }
-
-      this.emit('user_updated_batched', id, e)
-    })
-
-    socket.on('state_updated_reliable', (id, payloadDelta) => {
-      updateState(id, payloadDelta)
-
-      this.emit('state_updated_reliable', id, payloadDelta)
-      this.emit('state_updated', id, payloadDelta)
-    })
-    socket.on('state_updated_unreliable', (id, payloadDelta) => {
-      updateState(id, payloadDelta)
-
-      this.emit('state_updated_unreliable', id, payloadDelta)
-      this.emit('state_updated', id, payloadDelta)
-    })
-    socket.on('state_updated_batched', async (id, e) => {
-      // e is an array of messages we need to apply
-      const waittime = this.BATCH_INTERVAL / e.length
-      for (let i = 0; i < e.length; i++) {
-        const msg = e[i]
-
-        updateState(id, msg)
-
-        this.emit('state_updated', id, msg)
-
-        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) } // smooth the messages
-      }
-
-      this.emit('state_updated_batched', id, e)
-    })
-
+    // init the state variables...
     this.id = undefined
     this.room = undefined
     if (this.isHandlingState()) {
@@ -279,8 +206,143 @@ class GT extends EventEmitter {
       this.emit('state_object_updated')
     }
 
+    // when someone joins a room, including us
+    socket.on('connected', (id, user) => {
+      // update our state if we need too
+      if (this.isHandlingState()) {
+        this.users[id] = user
+        this.emit('users_object_updated')
+      }
+
+      // emit the message out
+      this.emit('connected', id, user)
+    })
+
+    // when someone leaves the room
+    socket.on('disconnected', (id, reason) => {
+      // update our state if we need too
+      if (this.isHandlingState()) {
+        delete this.users[id]
+        this.emit('users_object_updated')
+      }
+
+      // emit the message out
+      this.emit('disconnected', id, reason)
+    })
+
+    // helper function to update the state of a user
+    const updateUser = (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+        // do the same logic of apply deltas as the server...
+        _.merge(this.users[id], payloadDelta)
+        this.users[id] = this.removeObjectsWithNull(this.users[id])
+
+        // emit a message out
+        this.emit('users_object_updated')
+      }
+    }
+
+    // helper function to update the state of a user
+    const updateState = (id, payloadDelta) => {
+      if (this.isHandlingState()) {
+        // do the same logic of apply deltas as the server...
+        _.merge(this.state, payloadDelta)
+        this.state = this.removeObjectsWithNull(this.state)
+
+        // emit a message out
+        this.emit('state_object_updated')
+      }
+    }
+
+    // when a user updated their state via the reliable channel
+    socket.on('user_updated_reliable', (id, payloadDelta) => {
+      // handle state change
+      updateUser(id, payloadDelta)
+
+      // emit the message out
+      this.emit('user_updated_reliable', id, payloadDelta)
+      this.emit('user_updated', id, payloadDelta)
+    })
+
+    // when a user updated their state via the unreliable channel
+    socket.on('user_updated_unreliable', (id, payloadDelta) => {
+      // handle state change
+      updateUser(id, payloadDelta)
+
+      // emit the message out
+      this.emit('user_updated_unreliable', id, payloadDelta)
+      this.emit('user_updated', id, payloadDelta)
+    })
+
+    // when a user updated their state via the batched channel
+    socket.on('user_updated_batched', async (id, e) => {
+      // e is an array of messages we need to apply in order...
+
+      // we wait until applying the next delta to smooth out the messages, so they all don't apply instantly
+      const waittime = this.BATCH_INTERVAL / e.length
+      for (let i = 0; i < e.length; i++) {
+        const msg = e[i]
+
+        // apply the delta to our state
+        updateUser(id, msg)
+
+        // emit that message
+        this.emit('user_updated', id, msg)
+
+        // smooth out the messages with waiting a few milliseconds
+        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
+      }
+
+      // emit the message
+      this.emit('user_updated_batched', id, e)
+    })
+
+    // when a user updated the room's state via the reliable channel
+    socket.on('state_updated_reliable', (id, payloadDelta) => {
+      // handle state change
+      updateState(id, payloadDelta)
+
+      // emit the message out
+      this.emit('state_updated_reliable', id, payloadDelta)
+      this.emit('state_updated', id, payloadDelta)
+    })
+
+    // when a user updated the room's state via the unreliable channel
+    socket.on('state_updated_unreliable', (id, payloadDelta) => {
+      // handle state change
+      updateState(id, payloadDelta)
+
+      // emit the message out
+      this.emit('state_updated_unreliable', id, payloadDelta)
+      this.emit('state_updated', id, payloadDelta)
+    })
+
+    // when a user updated their state via the batched channel
+    socket.on('state_updated_batched', async (id, e) => {
+      // e is an array of messages we need to apply in order...
+
+      // we wait until applying the next delta to smooth out the messages, so they all don't apply instantly
+      const waittime = this.BATCH_INTERVAL / e.length
+      for (let i = 0; i < e.length; i++) {
+        const msg = e[i]
+
+        // apply the delta to our state
+        updateState(id, msg)
+
+        // emit that message
+        this.emit('state_updated', id, msg)
+
+        // smooth out the messages with waiting a few milliseconds
+        if (i < e.length - 1) { await new Promise(resolve => setTimeout(resolve, waittime)) }
+      }
+
+      // emit the message
+      this.emit('state_updated_batched', id, e)
+    })
+
     // when we disconnect from the server
     socket.on('disconnect', (reason) => {
+      // clear our state variables...
       this.id = undefined
       this.room = undefined
       if (this.isHandlingState()) {
@@ -290,11 +352,13 @@ class GT extends EventEmitter {
         this.emit('state_object_updated')
       }
 
+      // emit the message
       this.emit('disconnect', reason)
     })
 
     // when we join a room
     socket.on('joined', (room, roomState, users) => {
+      // update our state variables...
       this.room = room
       if (this.isHandlingState()) {
         this.users = users
@@ -303,18 +367,20 @@ class GT extends EventEmitter {
         this.emit('state_object_updated')
       }
 
+      // emit the message out...
       this.emit('joined', room, roomState, users)
     })
 
-    // when we auth.
+    // when we authenticate
     socket.on('authed', (authPayload) => {
+      // update our state variables.
       this.id = authPayload.id
-
       if (this.isHandlingState()) {
         this.users[authPayload.id] = authPayload.state
         this.emit('users_object_updated')
       }
 
+      // emit the message out.
       this.emit('authed', authPayload.id, authPayload.state)
     })
 
@@ -329,12 +395,13 @@ class GT extends EventEmitter {
     })
 
     // when we connect to the server
-    socket.on('connect', (socketId) => {
-      this.emit('connect', socketId)
+    socket.on('connect', () => {
+      this.emit('connect', socket.id)
     })
 
     // when we were removed from a room
     socket.on('leftroom', (reason) => {
+      // update our state variables...
       this.room = undefined
       if (this.isHandlingState()) {
         this.users = {}
@@ -343,6 +410,7 @@ class GT extends EventEmitter {
         this.emit('state_object_updated')
       }
 
+      // emit the message
       this.emit('leftroom', reason)
     })
 
@@ -362,12 +430,17 @@ class GT extends EventEmitter {
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
 
+    // setup the batch message handler...
+
+    // how often to send out the messages.
     this.BATCH_INTERVAL = 50
     this.BATCH_EVENT_LISTENER = new EventEmitter()
 
+    // the array of messages
     this.BATCH_STATE_ARRAY = []
     this.__stateBatchHandler()
 
+    // the array of messages
     this.BATCH_USER_ARRAY = []
     this.__userBatchHandler()
   }
@@ -424,6 +497,7 @@ class GT extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (this.isConnected()) { reject(new Error('We are already connected.')) }
 
+      // setup events to catch when we fail or succeed in connecting
       let handleConnect
       let handleConnectError
       this.socket.once('connect', handleConnect = () => {
@@ -437,6 +511,7 @@ class GT extends EventEmitter {
         reject(err)
       })
 
+      // now try to connect.
       this.socket.connect()
     })
   }
@@ -452,6 +527,7 @@ class GT extends EventEmitter {
       if (!this.isConnected()) { reject(new Error('We need to be connected.')) }
       if (this.isAuthed()) { reject(new Error('We already authed')) }
 
+      // setup the events to catch when we fail or succeed in authing.
       let handleAuth
       let handleAuthError
       this.socket.once('authed', handleAuth = (authPayload) => {
@@ -470,6 +546,7 @@ class GT extends EventEmitter {
 
       if (!id) id = this.socket.id
 
+      // send the auth packet
       this.socket.emit('auth', {
         id
       })
@@ -489,6 +566,7 @@ class GT extends EventEmitter {
       if (!this.isAuthed()) { reject(new Error('We need to be authed.')) }
       if (this.isInRoom()) { reject(new Error('We Already in room')) }
 
+      // setup the events to catch when we fail or succeed in joining a room.
       let handleJoin
       let handleJoinError
       this.socket.once('joined', handleJoin = (room, roomState, users) => {
@@ -507,6 +585,7 @@ class GT extends EventEmitter {
 
       if (!room) room = ''
 
+      // send the packet to the server
       this.socket.emit('join', { room }, userPayload)
     })
   }
@@ -524,6 +603,7 @@ class GT extends EventEmitter {
         resolve()
       })
 
+      // disconnect from the server.
       this.socket.disconnect()
     })
   }
@@ -537,6 +617,7 @@ class GT extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (!this.isInRoom()) { reject(new Error('We need to be in a room')) }
 
+      // setup the events to catch when we fail or succeed in the leave room.
       let handleLeave
       let handleLeaveError
       this.socket.once('leftroom', handleLeave = (reason) => {
@@ -553,6 +634,7 @@ class GT extends EventEmitter {
         reject(err)
       })
 
+      // send the leave room packet.
       this.socket.emit('leaveroom')
     })
   }
@@ -563,7 +645,7 @@ class GT extends EventEmitter {
      */
   updateStateReliable (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
-    this.socket.emit('state_updated_reliable', payloadDelta)
+    this.socket.emit('state_updated_reliable', payloadDelta) // send the delta to the server...
     return this
   }
 
@@ -573,7 +655,7 @@ class GT extends EventEmitter {
      */
   updateStateUnreliable (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
-    this.socket.emit('state_updated_unreliable', payloadDelta)
+    this.socket.emit('state_updated_unreliable', payloadDelta) // send the delta to the server...
     return this
   }
 
@@ -583,7 +665,7 @@ class GT extends EventEmitter {
      */
   updateUserReliable (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
-    this.socket.emit('user_updated_reliable', payloadDelta)
+    this.socket.emit('user_updated_reliable', payloadDelta) // send the delta to the server...
     return this
   }
 
@@ -593,7 +675,7 @@ class GT extends EventEmitter {
      */
   updateUserUnreliable (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
-    this.socket.emit('user_updated_unreliable', payloadDelta)
+    this.socket.emit('user_updated_unreliable', payloadDelta) // send the delta to the server...
     return this
   }
 
@@ -613,6 +695,9 @@ class GT extends EventEmitter {
     return this.updateStateReliable(payloadDelta)
   }
 
+  /**
+   * Handles the user message batching, every interval, it will flush the array of messages, and send it to the server.
+   */
   async __userBatchHandler () {
     let lastMessageTime = 0
 
@@ -636,6 +721,9 @@ class GT extends EventEmitter {
     }
   }
 
+  /**
+   * Handles the state message batching.
+   */
   async __stateBatchHandler () {
     let lastMessageTime = 0
 
@@ -659,6 +747,10 @@ class GT extends EventEmitter {
     }
   }
 
+  /**
+   * Sends to the server a delta of the room's state. Appends the message to an array of messages and sends it at an interval to limit send rates.
+   * @param {Object} payloadDelta The delta object to send to the server.
+   */
   updateStateBatched (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
 
@@ -667,6 +759,10 @@ class GT extends EventEmitter {
     return this
   }
 
+  /**
+   * Sends to the server a delta of your user's state. Appends the message to an array of messages and sends it at an interval to limit send rates.
+   * @param {Object} payloadDelta The delta object to send to the server.
+   */
   updateUserBatched (payloadDelta) {
     if (!this.isInRoom()) { throw new Error('Need to be in a room') }
 
