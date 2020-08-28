@@ -14,7 +14,7 @@
     "build": "webpack --mode production --config webpack.config.js",
     "prepublishOnly": "npm run build",
     "dev": "webpack --mode development --config webpack.config.dev.js --watch",
-    "test": "rm -rf temp && mkdir -p temp && cd temp && git clone https://github.com/mrd875/GroupwareToolkitServer && cd GroupwareToolkitServer && npm i --only=prod && cd ../.. && mocha",
+    "test": "rm -rf temp && mkdir -p temp && cd temp && git clone https://github.com/mrd875/GroupwareToolkitServer && cd GroupwareToolkitServer && npm i --only=prod && cd ../.. && mocha --exit",
     "test_fast": "mocha --exit"
   },
   "repository": {
